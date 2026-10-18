@@ -247,6 +247,11 @@
             app:summary="@string/modx_send_anim_sum"
             app:title="@string/modx_send_anim" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_longpress_menu"
+            app:summary="@string/modx_longpress_menu_sum"
+            app:title="@string/modx_longpress_menu" />
+
 
         <ListPreference
             android:defaultValue="0"

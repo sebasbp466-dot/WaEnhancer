@@ -574,4 +574,6 @@
     <string name="modx_scroll_blur_strength" translatable="false">Intensidad del blur al scroll</string>
     <string name="modx_send_anim" translatable="false">Animación al enviar</string>
     <string name="modx_send_anim_sum" translatable="false">El botón de enviar rebota al tocarlo</string>
+    <string name="modx_longpress_menu" translatable="false">Menú al mantener presionado</string>
+    <string name="modx_longpress_menu_sum" translatable="false">Al seleccionar un mensaje o chat aparece un menú flotante con las opciones de la barra de arriba</string>
 </resources>
