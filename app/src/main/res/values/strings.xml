@@ -569,4 +569,9 @@
     <string name="modx_animations_sum" translatable="false">Animación al abrir diálogos y al cambiar de pantalla</string>
     <string name="modx_motion_blur" translatable="false">Desenfoque de movimiento</string>
     <string name="modx_motion_blur_sum" translatable="false">Desenfoca la pantalla mientras se anima (Android 12+, puede consumir más batería)</string>
+    <string name="modx_scroll_blur" translatable="false">Blur al hacer scroll</string>
+    <string name="modx_scroll_blur_sum" translatable="false">Desenfoca las listas mientras subes o bajas rápido (consume batería)</string>
+    <string name="modx_scroll_blur_strength" translatable="false">Intensidad del blur al scroll</string>
+    <string name="modx_send_anim" translatable="false">Animación al enviar</string>
+    <string name="modx_send_anim_sum" translatable="false">El botón de enviar rebota al tocarlo</string>
 </resources>

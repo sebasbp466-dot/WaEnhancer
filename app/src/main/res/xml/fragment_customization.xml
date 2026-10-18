@@ -228,6 +228,25 @@
             app:summary="@string/modx_motion_blur_sum"
             app:title="@string/modx_motion_blur" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_scroll_blur"
+            app:summary="@string/modx_scroll_blur_sum"
+            app:title="@string/modx_scroll_blur" />
+
+        <SeekBarPreference
+            android:defaultValue="6"
+            android:max="20"
+            app:dependency="modx_scroll_blur"
+            app:key="modx_scroll_blur_strength"
+            app:min="1"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_scroll_blur_strength" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_send_anim"
+            app:summary="@string/modx_send_anim_sum"
+            app:title="@string/modx_send_anim" />
+
 
         <ListPreference
             android:defaultValue="0"

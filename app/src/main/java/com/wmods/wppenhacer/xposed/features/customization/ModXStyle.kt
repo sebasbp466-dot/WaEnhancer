@@ -56,6 +56,7 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
         val m3 = xprefs.getBoolean("modx_m3_dialogs", false)
         val anim = xprefs.getBoolean("modx_animations", false)
         val motionBlur = anim && xprefs.getBoolean("modx_motion_blur", false)
+        android.util.Log.i("ModX", "ModXStyle m3=$m3 anim=$anim motionBlur=$motionBlur")
         if (!m3 && !anim) return
 
         Dialog::class.java.resolve().firstMethod {
@@ -83,7 +84,7 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
                     window.setBackgroundDrawable(bg)
                 }
                 if (anim) {
-                    playEnter(decor, density, 0f, 0.88f, 280, if (motionBlur) 10f else 0f)
+                    playEnter(decor, density, 0f, 0.80f, 380, if (motionBlur) 20f else 0f)
                 }
             }
         }
@@ -99,7 +100,7 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
                     if (view.javaClass.simpleName != "DecorView") return@after
                     if (view.context !is Activity) return@after
                     val density = view.resources.displayMetrics.density
-                    playEnter(view, density, 40f, 0.94f, 320, if (motionBlur) 24f else 0f)
+                    playEnter(view, density, 90f, 0.86f, 520, if (motionBlur) 40f else 0f)
                 }
             }
         }
