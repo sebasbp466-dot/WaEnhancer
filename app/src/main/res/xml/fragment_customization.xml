@@ -198,6 +198,20 @@
             app:showSeekBarValue="true"
             app:title="@string/floating_bottom_bar_radius" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_blur"
+            app:summary="@string/modx_blur_sum"
+            app:title="@string/modx_blur" />
+
+        <SeekBarPreference
+            android:defaultValue="16"
+            android:max="40"
+            app:dependency="modx_blur"
+            app:key="modx_blur_radius"
+            app:min="1"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_blur_radius" />
+
 
         <ListPreference
             android:defaultValue="0"
