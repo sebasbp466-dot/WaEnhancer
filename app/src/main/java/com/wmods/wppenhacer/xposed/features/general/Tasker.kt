@@ -31,7 +31,7 @@ class Tasker(loader: ClassLoader, preferences: SharedPreferences) : Feature(load
     }
 
     private fun registerSenderMessage() {
-        val filter = IntentFilter("com.wmods.wppenhacer.MESSAGE_SENT")
+        val filter = IntentFilter("com.wamodx.app.MESSAGE_SENT")
         ContextCompat.registerReceiver(
             Utils.application, SenderMessageBroadcastReceiver(), filter,
             ContextCompat.RECEIVER_EXPORTED
@@ -53,7 +53,7 @@ class Tasker(loader: ClassLoader, preferences: SharedPreferences) : Feature(load
                 Utils.databaseExecutor.execute {
                     val name = WppCore.getContactName(userJid)
                     Handler(Utils.application.mainLooper).post {
-                        val intent = Intent("com.wmods.wppenhacer.MESSAGE_RECEIVED")
+                        val intent = Intent("com.wamodx.app.MESSAGE_RECEIVED")
                         intent.putExtra("number", number)
                         intent.putExtra("name", name)
                         intent.putExtra("message", msg)
@@ -70,7 +70,7 @@ class Tasker(loader: ClassLoader, preferences: SharedPreferences) : Feature(load
             val taskerEnabled = false
             if (!taskerEnabled) return
 
-            val intent = Intent("com.wmods.wppenhacer.EVENT")
+            val intent = Intent("com.wamodx.app.EVENT")
             intent.putExtra("name", name)
             intent.putExtra("number", number)
             intent.putExtra("event", event)

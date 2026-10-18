@@ -25,8 +25,8 @@ object RootDiagnostics {
     )
 
     private val WAENHANCER_PACKAGES = listOf(
-        "com.wmods.wppenhacer",
-        "com.wmods.wppenhacer.w4b"
+        "com.wamodx.app",
+        "com.wamodx.app.w4b"
     )
 
     enum class LogType { INFO, SUCCESS, WARNING, ERROR }

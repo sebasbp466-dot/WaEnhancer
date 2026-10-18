@@ -51,7 +51,7 @@ object Utils {
         val context: Application = application
         val notificationManager = NotificationManagerCompat.from(context)
         val channel =
-            NotificationChannel("wppenhacer", "WAE Enhancer", NotificationManager.IMPORTANCE_HIGH)
+            NotificationChannel("wppenhacer", "WA ModX", NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -398,7 +398,7 @@ object Utils {
         val context: Application = application
         val notificationManager = NotificationManagerCompat.from(context)
         val channel =
-            NotificationChannel("wppenhacer", "WAE Enhancer", NotificationManager.IMPORTANCE_HIGH)
+            NotificationChannel("wppenhacer", "WA ModX", NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(channel)
         val notification = NotificationCompat.Builder(context, "wppenhacer")
             .setSmallIcon(android.R.mipmap.sym_def_app_icon)

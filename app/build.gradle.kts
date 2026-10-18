@@ -36,7 +36,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.wmods.wppenhacer"
+        applicationId = "com.wamodx.app"
         minSdk = 28
         //noinspection OldTargetApi
         targetSdk = 34
