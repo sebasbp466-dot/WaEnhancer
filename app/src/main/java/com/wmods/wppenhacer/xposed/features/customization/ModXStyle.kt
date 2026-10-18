@@ -1,11 +1,17 @@
 package com.wmods.wppenhacer.xposed.features.customization
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.Dialog
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -15,10 +21,41 @@ import com.wmods.wppenhacer.xposed.core.Feature
 class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
+    private fun playEnter(
+        view: View, density: Float, slideDp: Float, startScale: Float,
+        durationMs: Long, blurDp: Float
+    ) {
+        view.alpha = 0f
+        view.translationY = slideDp * density
+        view.scaleX = startScale
+        view.scaleY = startScale
+        view.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+            .setDuration(durationMs).setInterpolator(DecelerateInterpolator(1.6f)).start()
+        if (blurDp > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val va = ValueAnimator.ofFloat(blurDp * density, 0f)
+            va.duration = durationMs
+            va.interpolator = DecelerateInterpolator(1.6f)
+            va.addUpdateListener {
+                val r = it.animatedValue as Float
+                if (r < 0.5f) view.setRenderEffect(null)
+                else view.setRenderEffect(
+                    RenderEffect.createBlurEffect(0f, r, Shader.TileMode.CLAMP)
+                )
+            }
+            va.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    view.setRenderEffect(null)
+                }
+            })
+            va.start()
+        }
+    }
+
     @Throws(Exception::class)
     override fun doHook() {
         val m3 = xprefs.getBoolean("modx_m3_dialogs", false)
         val anim = xprefs.getBoolean("modx_animations", false)
+        val motionBlur = anim && xprefs.getBoolean("modx_motion_blur", false)
         if (!m3 && !anim) return
 
         Dialog::class.java.resolve().firstMethod {
@@ -46,11 +83,7 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
                     window.setBackgroundDrawable(bg)
                 }
                 if (anim) {
-                    decor.alpha = 0f
-                    decor.scaleX = 0.92f
-                    decor.scaleY = 0.92f
-                    decor.animate().alpha(1f).scaleX(1f).scaleY(1f)
-                        .setDuration(220).setInterpolator(DecelerateInterpolator()).start()
+                    playEnter(decor, density, 0f, 0.88f, 280, if (motionBlur) 10f else 0f)
                 }
             }
         }
@@ -63,13 +96,10 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
             }.hook {
                 after {
                     val view = instance as? View ?: return@after
-                    if (view.javaClass.name != "com.android.internal.policy.DecorView") return@after
+                    if (view.javaClass.simpleName != "DecorView") return@after
                     if (view.context !is Activity) return@after
                     val density = view.resources.displayMetrics.density
-                    view.alpha = 0f
-                    view.translationY = 24f * density
-                    view.animate().alpha(1f).translationY(0f)
-                        .setDuration(240).setInterpolator(DecelerateInterpolator()).start()
+                    playEnter(view, density, 40f, 0.94f, 320, if (motionBlur) 24f else 0f)
                 }
             }
         }

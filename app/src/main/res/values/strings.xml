@@ -567,4 +567,6 @@
     <string name="modx_m3_dialogs_sum" translatable="false">Esquinas redondeadas y color tonal estilo Material 3 en los diálogos</string>
     <string name="modx_animations" translatable="false">Animaciones suaves</string>
     <string name="modx_animations_sum" translatable="false">Animación al abrir diálogos y al cambiar de pantalla</string>
+    <string name="modx_motion_blur" translatable="false">Desenfoque de movimiento</string>
+    <string name="modx_motion_blur_sum" translatable="false">Desenfoca la pantalla mientras se anima (Android 12+, puede consumir más batería)</string>
 </resources>

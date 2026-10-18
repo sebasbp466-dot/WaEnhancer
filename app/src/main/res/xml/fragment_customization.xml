@@ -222,6 +222,12 @@
             app:summary="@string/modx_animations_sum"
             app:title="@string/modx_animations" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_animations"
+            app:key="modx_motion_blur"
+            app:summary="@string/modx_motion_blur_sum"
+            app:title="@string/modx_motion_blur" />
+
 
         <ListPreference
             android:defaultValue="0"
