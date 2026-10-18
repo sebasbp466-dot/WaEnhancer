@@ -563,4 +563,8 @@
     <string name="modx_blur" translatable="false">Blur detrás de diálogos</string>
     <string name="modx_blur_sum" translatable="false">Desenfoca el fondo al abrir diálogos y hojas inferiores (Android 12+)</string>
     <string name="modx_blur_radius" translatable="false">Intensidad del blur</string>
+    <string name="modx_m3_dialogs" translatable="false">Diálogos Material 3</string>
+    <string name="modx_m3_dialogs_sum" translatable="false">Esquinas redondeadas y color tonal estilo Material 3 en los diálogos</string>
+    <string name="modx_animations" translatable="false">Animaciones suaves</string>
+    <string name="modx_animations_sum" translatable="false">Animación al abrir diálogos y al cambiar de pantalla</string>
 </resources>

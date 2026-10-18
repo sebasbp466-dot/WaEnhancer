@@ -5,6 +5,7 @@ import com.wmods.wppenhacer.xposed.features.customization.ContactVerify
 import com.wmods.wppenhacer.xposed.features.customization.CustomThemeV2
 import com.wmods.wppenhacer.xposed.features.customization.CustomTime
 import com.wmods.wppenhacer.xposed.features.customization.ModXBlur
+import com.wmods.wppenhacer.xposed.features.customization.ModXStyle
 import com.wmods.wppenhacer.xposed.features.customization.CustomToolbar
 import com.wmods.wppenhacer.xposed.features.customization.CustomView
 import com.wmods.wppenhacer.xposed.features.customization.DefaultEmoji
@@ -102,6 +103,7 @@ internal object FeatureRegistry {
         PinnedLimit::class.java,
         CustomTime::class.java,
         ModXBlur::class.java,
+        ModXStyle::class.java,
         ShareLimit::class.java,
         StatusDownload::class.java,
         ViewOnce::class.java,

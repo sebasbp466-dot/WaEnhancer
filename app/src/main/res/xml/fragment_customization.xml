@@ -212,6 +212,16 @@
             app:showSeekBarValue="true"
             app:title="@string/modx_blur_radius" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_m3_dialogs"
+            app:summary="@string/modx_m3_dialogs_sum"
+            app:title="@string/modx_m3_dialogs" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_animations"
+            app:summary="@string/modx_animations_sum"
+            app:title="@string/modx_animations" />
+
 
         <ListPreference
             android:defaultValue="0"
