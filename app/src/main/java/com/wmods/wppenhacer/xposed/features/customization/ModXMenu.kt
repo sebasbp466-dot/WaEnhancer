@@ -33,7 +33,7 @@ class ModXMenu(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
-        val enabled = xprefs.getBoolean("modx_longpress_menu", false)
+        val enabled = (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_longpress_menu", false))
         Log.i("ModX", "ModXMenu enabled=$enabled")
         if (!enabled) return
         val barId = Utils.getID("action_mode_bar", "id")
@@ -116,8 +116,9 @@ class ModXMenu(loader: ClassLoader, preferences: SharedPreferences) :
         val d = dm.density
         val night = (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-        val bg = if (night) 0xFF2B2930.toInt() else 0xFFF3EDF7.toInt()
-        val fg = if (night) 0xFFE6E0E9.toInt() else 0xFF1D1B20.toInt()
+        val dyn = xprefs.getBoolean("modx_m3_dynamic", false)
+        val bg = ModXColors.surface(ctx, night, dyn)
+        val fg = ModXColors.onSurface(ctx, night, dyn)
 
         val card = LinearLayout(ctx)
         card.orientation = LinearLayout.VERTICAL
@@ -186,7 +187,7 @@ class ModXMenu(loader: ClassLoader, preferences: SharedPreferences) :
         popup = pw
         try {
             pw.showAtLocation(bar.rootView, Gravity.NO_GRAVITY, x, y)
-            val blurBehind = if (xprefs.getBoolean("modx_blur", false))
+            val blurBehind = if ((xprefs.getBoolean("modx_lg", false) && xprefs.getBoolean("modx_blur", false)))
                 xprefs.getInt("modx_blur_radius", 16) else 0
             if (blurBehind > 0 && android.os.Build.VERSION.SDK_INT >= 31) {
                 try {

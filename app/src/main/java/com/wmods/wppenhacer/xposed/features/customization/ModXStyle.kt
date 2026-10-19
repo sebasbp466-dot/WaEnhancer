@@ -53,8 +53,8 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
-        val m3 = xprefs.getBoolean("modx_m3_dialogs", false)
-        val anim = xprefs.getBoolean("modx_animations", false)
+        val m3 = (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_m3_dialogs", false))
+        val anim = (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_animations", false))
         val motionBlur = anim && xprefs.getBoolean("modx_motion_blur", false)
         android.util.Log.i("ModX", "ModXStyle m3=$m3 anim=$anim motionBlur=$motionBlur")
         if (!m3 && !anim) return
@@ -79,7 +79,7 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
                     val ui = dialog.context.resources.configuration.uiMode
                     val night = (ui and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
                     val bg = GradientDrawable()
-                    bg.setColor(if (night) 0xFF2B2930.toInt() else 0xFFF3EDF7.toInt())
+                    bg.setColor(ModXColors.surface(dialog.context, night, xprefs.getBoolean("modx_m3_dynamic", false)))
                     bg.cornerRadius = 28f * density
                     window.setBackgroundDrawable(bg)
                 }

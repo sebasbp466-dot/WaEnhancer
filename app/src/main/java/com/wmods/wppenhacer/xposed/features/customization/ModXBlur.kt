@@ -12,7 +12,7 @@ class ModXBlur(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
-        if (!xprefs.getBoolean("modx_blur", false)) return
+        if (!(xprefs.getBoolean("modx_lg", false) && xprefs.getBoolean("modx_blur", false))) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val radiusDp = xprefs.getInt("modx_blur_radius", 16)
 

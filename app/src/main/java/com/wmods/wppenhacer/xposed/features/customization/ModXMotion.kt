@@ -21,8 +21,8 @@ class ModXMotion(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
-        val scrollBlur = xprefs.getBoolean("modx_scroll_blur", false)
-        val sendAnim = xprefs.getBoolean("modx_send_anim", false)
+        val scrollBlur = (xprefs.getBoolean("modx_lg", false) && xprefs.getBoolean("modx_scroll_blur", false))
+        val sendAnim = (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_send_anim", false))
         Log.i("ModX", "ModXMotion scrollBlur=$scrollBlur sendAnim=$sendAnim")
         if (scrollBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) hookScroll()
         if (sendAnim) hookSend()

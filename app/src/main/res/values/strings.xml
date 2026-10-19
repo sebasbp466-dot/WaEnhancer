@@ -584,7 +584,17 @@
     <string name="modx_glass_under_sum" translatable="false">La lista pasa por debajo de la barra inferior y el cristal desenfoca lo que hay detrás. Si algo se ve mal, apágalo</string>
     <string name="modx_glass_extend" translatable="false">Barra de cristal hasta el borde</string>
     <string name="modx_glass_extend_sum" translatable="false">El cristal de la barra inferior llega hasta el borde de la pantalla, sin franja vacía debajo</string>
-    <string name="modx_liquid" translatable="false">Liquid Glass</string>
+    <string name="modx_liquid" translatable="false">Refracción líquida (shader)</string>
     <string name="modx_liquid_sum" translatable="false">Refracción, brillo en el borde y color vivo en la barra inferior (Android 13+, usa más GPU)</string>
     <string name="modx_liquid_strength" translatable="false">Intensidad de la refracción</string>
+    <string name="modx_cat_lg" translatable="false">Liquid Glass</string>
+    <string name="modx_lg" translatable="false">Activar Liquid Glass</string>
+    <string name="modx_lg_sum" translatable="false">Cristal líquido y blur estilo iPhone. Si lo apagas, todas sus opciones se desactivan</string>
+    <string name="modx_cat_m3" translatable="false">Material Design 3</string>
+    <string name="modx_m3" translatable="false">Activar Material Design 3</string>
+    <string name="modx_m3_sum" translatable="false">Diálogos, menús y animaciones estilo Material 3. Si lo apagas, todas sus opciones se desactivan</string>
+    <string name="modx_m3_dynamic" translatable="false">Colores Material You</string>
+    <string name="modx_m3_dynamic_sum" translatable="false">Diálogos y menús usan la paleta de tu fondo de pantalla (Android 12+)</string>
+    <string name="modx_liquid_blur" translatable="false">Desenfoque del cristal líquido</string>
+    <string name="modx_liquid_tint" translatable="false">Tinte del cristal líquido</string>
 </resources>

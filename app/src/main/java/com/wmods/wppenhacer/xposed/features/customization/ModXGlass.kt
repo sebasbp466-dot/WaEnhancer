@@ -50,18 +50,21 @@ half4 main(float2 fc) {
         sdBox(p + float2(0.0, e), hb, radius) - sdBox(p - float2(0.0, e), hb, radius));
     g = g / max(length(g), 0.0001);
     float depth = clamp(-d / bevel, 0.0, 1.0);
-    float lens = pow(1.0 - depth, 2.5);
+    float lens = pow(1.0 - depth, 2.0);
+    float2 uvc = ctr + p * 0.94;
     float2 off = g * lens * refr;
-    half4 cr = contents.eval(fc - off);
-    half4 cg = contents.eval(fc - off * 0.88);
-    half4 cb = contents.eval(fc - off * 0.76);
+    half4 cr = contents.eval(uvc - off);
+    half4 cg = contents.eval(uvc - off * 0.86);
+    half4 cb = contents.eval(uvc - off * 0.72);
     half a = max(cr.a, max(cg.a, cb.a));
     half3 col = half3(cr.r, cg.g, cb.b);
     half l = dot(col, half3(0.299, 0.587, 0.114));
-    col = mix(half3(l), col, half(1.3));
-    float rim = pow(1.0 - depth, 8.0);
-    float lit = clamp(dot(g, normalize(float2(-0.5, -0.85))), 0.0, 1.0);
-    col += half3((rim * (0.18 + 0.5 * lit)) * a);
+    col = mix(half3(l), col, half(1.45));
+    col = col * half(1.08) + half3(0.015);
+    float rim = pow(1.0 - depth, 5.0);
+    float lit = clamp(dot(g, normalize(float2(-0.55, -0.83))), 0.0, 1.0);
+    float lit2 = clamp(dot(g, normalize(float2(0.6, 0.8))), 0.0, 1.0);
+    col += half3((rim * (0.20 + 0.9 * lit + 0.35 * lit2)) * a);
     return half4(col, a);
 }
 """
@@ -103,8 +106,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                 val sh = shader ?: RuntimeShader(LIQUID_AGSL).also { shader = it }
                 sh.setFloatUniform("box", 0f, 0f, gw.toFloat(), gh.toFloat())
                 sh.setFloatUniform("radius", corner)
-                sh.setFloatUniform("bevel", gh * 0.5f)
-                sh.setFloatUniform("refr", liquid / 100f * 0.7f * gh)
+                sh.setFloatUniform("bevel", gh * 0.55f)
+                sh.setFloatUniform("refr", liquid / 100f * 0.9f * gh)
                 RenderEffect.createChainEffect(
                     RenderEffect.createRuntimeShaderEffect(sh, "contents"), blur
                 )
@@ -129,10 +132,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             val bottom: Int
             val corner: Float
             if (pill) {
-                left = (14 * d).toInt()
+                left = (12 * d).toInt()
                 right = w - left
-                top = (8 * d).toInt()
-                bottom = barH - (8 * d).toInt()
+                top = (6 * d).toInt()
+                bottom = barH - (6 * d).toInt()
                 corner = (bottom - top) / 2f
             } else {
                 var extra = 0
@@ -226,7 +229,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
-        val enabled = xprefs.getBoolean("modx_glass_bar", false)
+        val enabled = xprefs.getBoolean("modx_lg", false) &&
+            xprefs.getBoolean("modx_glass_bar", false)
         val under = xprefs.getBoolean("modx_glass_under", false) &&
             !xprefs.getBoolean("floating_bottom_bar", false)
         Log.i("ModX", "ModXGlass enabled=$enabled under=$under")
@@ -355,6 +359,12 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
     }
 
+    private fun logBarTree(v: View, depth: Int) {
+        if (depth > 4) return
+        Log.i("ModX", "ModXGlass bar ${"  ".repeat(depth)}${v.javaClass.simpleName} id=${v.id} ${v.width}x${v.height}")
+        if (v is ViewGroup) for (i in 0 until v.childCount) logBarTree(v.getChildAt(i), depth + 1)
+    }
+
     private fun freeClip(bar: View) {
         var p = bar.parent as? ViewGroup
         var n = 0
@@ -373,9 +383,9 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         if (installed.containsKey(bar)) return
         val d = bar.resources.displayMetrics.density
         val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
-            xprefs.getInt("modx_liquid_strength", 40) else 0
-        val effBlur = if (liquid > 0) blurDp * 0.35f else blurDp.toFloat()
-        val effTint = if (liquid > 0) tintPct * 0.3f else tintPct.toFloat()
+            xprefs.getInt("modx_liquid_strength", 60) else 0
+        val effBlur = if (liquid > 0) xprefs.getInt("modx_liquid_blur", 8).toFloat() else blurDp.toFloat()
+        val effTint = if (liquid > 0) xprefs.getInt("modx_liquid_tint", 18).toFloat() else tintPct.toFloat()
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
         val base = if (night) 0x1D1B20 else 0xFEF7FF
@@ -394,6 +404,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (liquid > 0) hideDivider(bar)
             logFab(bar.rootView, fabIds)
             logToolbar(bar.rootView)
+            logBarTree(bar, 0)
         }, 2500)
         if (extend) {
             freeClip(bar)
