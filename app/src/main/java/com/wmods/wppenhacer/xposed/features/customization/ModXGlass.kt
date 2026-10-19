@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.ColorFilter
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
@@ -78,13 +79,14 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val drawChild: Method,
         private val blurPx: Float,
         tint: Int,
-        private val corner: Float,
+        private val cornerFixed: Float,
         private val mirror: Boolean,
         private val extend: Boolean,
         private val liquid: Int
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
+        private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
         private val path = Path()
         private val rect = RectF()
         private val barLoc = IntArray(2)
@@ -92,21 +94,17 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private var recording = false
         private var shader: RuntimeShader? = null
         private var shaderFailed = false
+        private var strokeKey = 0L
 
-        private fun buildEffect(w: Int, h: Int): RenderEffect {
+        private fun buildEffect(gw: Int, gh: Int, corner: Float): RenderEffect {
             val blur = RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
             if (liquid <= 0 || shaderFailed || Build.VERSION.SDK_INT < 33) return blur
             return try {
                 val sh = shader ?: RuntimeShader(LIQUID_AGSL).also { shader = it }
-                val big = 400f
-                if (corner > 0f) {
-                    sh.setFloatUniform("box", 0f, 0f, w.toFloat(), h.toFloat())
-                } else {
-                    sh.setFloatUniform("box", -big, 0f, w + big, h + big)
-                }
+                sh.setFloatUniform("box", 0f, 0f, gw.toFloat(), gh.toFloat())
                 sh.setFloatUniform("radius", corner)
-                sh.setFloatUniform("bevel", minOf(h * 0.45f, blurPx * 1.6f))
-                sh.setFloatUniform("refr", liquid / 100f * 0.35f * minOf(h.toFloat(), 220f))
+                sh.setFloatUniform("bevel", gh * 0.5f)
+                sh.setFloatUniform("refr", liquid / 100f * 0.7f * gh)
                 RenderEffect.createChainEffect(
                     RenderEffect.createRuntimeShaderEffect(sh, "contents"), blur
                 )
@@ -123,27 +121,52 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             val barH = bounds.height()
             if (w <= 0 || barH <= 0) return
             bar.getLocationInWindow(barLoc)
-            var extra = 0
-            if (extend) {
-                val ins = bar.rootWindowInsets
-                val nav = if (ins != null) {
-                    ins.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars()).bottom
-                } else 0
-                val gap = bar.rootView.height - (barLoc[1] + barH)
-                extra = minOf(nav, gap).coerceAtLeast(0)
+            val d = bar.resources.displayMetrics.density
+            val pill = liquid > 0
+            val left: Int
+            val top: Int
+            val right: Int
+            val bottom: Int
+            val corner: Float
+            if (pill) {
+                left = (14 * d).toInt()
+                right = w - left
+                top = (8 * d).toInt()
+                bottom = barH - (8 * d).toInt()
+                corner = (bottom - top) / 2f
+            } else {
+                var extra = 0
+                if (extend) {
+                    val ins = bar.rootWindowInsets
+                    val nav = if (ins != null) {
+                        ins.getInsetsIgnoringVisibility(
+                            android.view.WindowInsets.Type.navigationBars()
+                        ).bottom
+                    } else 0
+                    val gap = bar.rootView.height - (barLoc[1] + barH)
+                    extra = minOf(nav, gap).coerceAtLeast(0)
+                }
+                left = 0
+                right = w
+                top = 0
+                bottom = barH + extra
+                corner = cornerFixed
             }
-            val h = barH + extra
-            rect.set(0f, 0f, w.toFloat(), h.toFloat())
+            val gw = right - left
+            val gh = bottom - top
+            if (gw <= 0 || gh <= 0) return
+            rect.set(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
             path.reset()
             path.addRoundRect(rect, corner, corner, Path.Direction.CW)
             if (canvas.isHardwareAccelerated) {
                 try {
-                    node.setPosition(0, 0, w, h)
-                    node.setRenderEffect(buildEffect(w, h))
-                    val rc = node.beginRecording(w, h)
+                    node.setPosition(left, top, right, bottom)
+                    node.setRenderEffect(buildEffect(gw, gh, corner))
+                    val rc = node.beginRecording(gw, gh)
                     try {
                         recording = true
-                        bar.getLocationInWindow(barLoc)
+                        val gx = barLoc[0] + left
+                        val gy = barLoc[1] + top
                         val now = SystemClock.uptimeMillis()
                         var child: View = bar
                         var p = bar.parent as? ViewGroup
@@ -151,16 +174,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                             p.getLocationInWindow(pLoc)
                             val save = rc.save()
                             if (mirror) {
-                                rc.translate(
-                                    (pLoc[0] - barLoc[0]).toFloat(),
-                                    (barLoc[1] - pLoc[1]).toFloat()
-                                )
+                                rc.translate((pLoc[0] - gx).toFloat(), (gy - pLoc[1]).toFloat())
                                 rc.scale(1f, -1f)
                             } else {
-                                rc.translate(
-                                    (pLoc[0] - barLoc[0]).toFloat(),
-                                    (pLoc[1] - barLoc[1]).toFloat()
-                                )
+                                rc.translate((pLoc[0] - gx).toFloat(), (pLoc[1] - gy).toFloat())
                             }
                             for (i in 0 until p.childCount) {
                                 val c = p.getChildAt(i)
@@ -185,6 +202,19 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                 }
             }
             canvas.drawPath(path, tintPaint)
+            if (pill) {
+                val key = gw.toLong() * 100000L + gh
+                if (key != strokeKey) {
+                    strokeKey = key
+                    strokePaint.shader = LinearGradient(
+                        left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(),
+                        intArrayOf(0xB3FFFFFF.toInt(), 0x14FFFFFF, 0x66FFFFFF),
+                        floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP
+                    )
+                }
+                strokePaint.strokeWidth = 1.4f * d
+                canvas.drawPath(path, strokePaint)
+            }
         }
 
         override fun setAlpha(alpha: Int) {}
@@ -303,6 +333,11 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         scan(c, barH, fabIds, barH * 3)
     }
 
+    private fun hideDivider(bar: View) {
+        val id = Utils.getID("bottom_nav_divider", "id")
+        if (id > 0) bar.rootView.findViewById<View>(id)?.alpha = 0f
+    }
+
     private fun logFab(v: View, ids: Set<Int>) {
         if (v.id in ids) {
             Log.i("ModX", "ModXGlass fab: clase=${v.javaClass.name} super=${v.javaClass.superclass?.name} ${v.width}x${v.height}")
@@ -337,22 +372,29 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     ) {
         if (installed.containsKey(bar)) return
         val d = bar.resources.displayMetrics.density
+        val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
+            xprefs.getInt("modx_liquid_strength", 40) else 0
+        val effBlur = if (liquid > 0) blurDp * 0.35f else blurDp.toFloat()
+        val effTint = if (liquid > 0) tintPct * 0.3f else tintPct.toFloat()
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
         val base = if (night) 0x1D1B20 else 0xFEF7FF
-        val tint = ((tintPct.coerceIn(0, 100) * 255 / 100) shl 24) or base
+        val tint = ((effTint.coerceIn(0f, 100f) * 255f / 100f).toInt() shl 24) or base
         val corner = if (xprefs.getBoolean("floating_bottom_bar", false))
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
         val extend = xprefs.getBoolean("modx_glass_extend", false) &&
-            !xprefs.getBoolean("floating_bottom_bar", false)
-        val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
-            xprefs.getInt("modx_liquid_strength", 40) else 0
+            !xprefs.getBoolean("floating_bottom_bar", false) && liquid == 0
         bar.background = GlassDrawable(
-            bar, drawChild, blurDp * d, tint, corner, !under, extend, liquid
+            bar, drawChild, effBlur * d, tint, corner, !under, extend, liquid
         )
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
-        bar.postDelayed({ logFab(bar.rootView, fabIds); logToolbar(bar.rootView) }, 2500)
+        if (liquid > 0) hideDivider(bar)
+        bar.postDelayed({
+            if (liquid > 0) hideDivider(bar)
+            logFab(bar.rootView, fabIds)
+            logToolbar(bar.rootView)
+        }, 2500)
         if (extend) {
             freeClip(bar)
             bar.postDelayed({
