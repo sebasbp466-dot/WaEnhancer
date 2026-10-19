@@ -186,6 +186,22 @@ class ModXMenu(loader: ClassLoader, preferences: SharedPreferences) :
         popup = pw
         try {
             pw.showAtLocation(bar.rootView, Gravity.NO_GRAVITY, x, y)
+            val blurBehind = if (xprefs.getBoolean("modx_blur", false))
+                xprefs.getInt("modx_blur_radius", 16) else 0
+            if (blurBehind > 0 && android.os.Build.VERSION.SDK_INT >= 31) {
+                try {
+                    val root = pw.contentView.rootView
+                    val lp = root.layoutParams as android.view.WindowManager.LayoutParams
+                    lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND or
+                        android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND
+                    lp.blurBehindRadius = (blurBehind * d).toInt()
+                    lp.dimAmount = 0.2f
+                    (ctx.getSystemService(android.content.Context.WINDOW_SERVICE)
+                        as android.view.WindowManager).updateViewLayout(root, lp)
+                } catch (t: Throwable) {
+                    Log.w("ModX", "ModXMenu: no se aplicó el blur de fondo", t)
+                }
+            }
         } catch (t: Throwable) {
             Log.w("ModX", "ModXMenu: no se pudo mostrar", t)
             popup = null

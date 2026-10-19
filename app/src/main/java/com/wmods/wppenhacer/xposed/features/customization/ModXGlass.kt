@@ -10,6 +10,7 @@ import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.RenderEffect
 import android.graphics.RenderNode
+import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -24,6 +25,45 @@ import com.wmods.wppenhacer.xposed.core.Feature
 import com.wmods.wppenhacer.xposed.utils.Utils
 import java.lang.reflect.Method
 import java.util.WeakHashMap
+
+private val LIQUID_AGSL = """
+uniform shader contents;
+uniform float4 box;
+uniform float radius;
+uniform float bevel;
+uniform float refr;
+
+float sdBox(float2 p, float2 b, float r) {
+    float2 q = abs(p) - b + float2(r);
+    return min(max(q.x, q.y), 0.0) + length(max(q, float2(0.0))) - r;
+}
+
+half4 main(float2 fc) {
+    float2 ctr = float2((box.x + box.z) * 0.5, (box.y + box.w) * 0.5);
+    float2 hb = float2((box.z - box.x) * 0.5, (box.w - box.y) * 0.5);
+    float2 p = fc - ctr;
+    float d = sdBox(p, hb, radius);
+    float e = 1.0;
+    float2 g = float2(
+        sdBox(p + float2(e, 0.0), hb, radius) - sdBox(p - float2(e, 0.0), hb, radius),
+        sdBox(p + float2(0.0, e), hb, radius) - sdBox(p - float2(0.0, e), hb, radius));
+    g = g / max(length(g), 0.0001);
+    float depth = clamp(-d / bevel, 0.0, 1.0);
+    float lens = pow(1.0 - depth, 2.5);
+    float2 off = g * lens * refr;
+    half4 cr = contents.eval(fc - off);
+    half4 cg = contents.eval(fc - off * 0.88);
+    half4 cb = contents.eval(fc - off * 0.76);
+    half a = max(cr.a, max(cg.a, cb.a));
+    half3 col = half3(cr.r, cg.g, cb.b);
+    half l = dot(col, half3(0.299, 0.587, 0.114));
+    col = mix(half3(l), col, half(1.3));
+    float rim = pow(1.0 - depth, 8.0);
+    float lit = clamp(dot(g, normalize(float2(-0.5, -0.85))), 0.0, 1.0);
+    col += half3((rim * (0.18 + 0.5 * lit)) * a);
+    return half4(col, a);
+}
+"""
 
 class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
@@ -40,7 +80,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         tint: Int,
         private val corner: Float,
         private val mirror: Boolean,
-        private val extend: Boolean
+        private val extend: Boolean,
+        private val liquid: Int
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -49,6 +90,32 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val barLoc = IntArray(2)
         private val pLoc = IntArray(2)
         private var recording = false
+        private var shader: RuntimeShader? = null
+        private var shaderFailed = false
+
+        private fun buildEffect(w: Int, h: Int): RenderEffect {
+            val blur = RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
+            if (liquid <= 0 || shaderFailed || Build.VERSION.SDK_INT < 33) return blur
+            return try {
+                val sh = shader ?: RuntimeShader(LIQUID_AGSL).also { shader = it }
+                val big = 400f
+                if (corner > 0f) {
+                    sh.setFloatUniform("box", 0f, 0f, w.toFloat(), h.toFloat())
+                } else {
+                    sh.setFloatUniform("box", -big, 0f, w + big, h + big)
+                }
+                sh.setFloatUniform("radius", corner)
+                sh.setFloatUniform("bevel", minOf(h * 0.45f, blurPx * 1.6f))
+                sh.setFloatUniform("refr", liquid / 100f * 0.35f * minOf(h.toFloat(), 220f))
+                RenderEffect.createChainEffect(
+                    RenderEffect.createRuntimeShaderEffect(sh, "contents"), blur
+                )
+            } catch (t: Throwable) {
+                shaderFailed = true
+                Log.w("ModX", "ModXGlass: el shader liquid falló", t)
+                blur
+            }
+        }
 
         override fun draw(canvas: Canvas) {
             if (recording) return
@@ -72,9 +139,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (canvas.isHardwareAccelerated) {
                 try {
                     node.setPosition(0, 0, w, h)
-                    node.setRenderEffect(
-                        RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
-                    )
+                    node.setRenderEffect(buildEffect(w, h))
                     val rc = node.beginRecording(w, h)
                     try {
                         recording = true
@@ -238,6 +303,23 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         scan(c, barH, fabIds, barH * 3)
     }
 
+    private fun logFab(v: View, ids: Set<Int>) {
+        if (v.id in ids) {
+            Log.i("ModX", "ModXGlass fab: clase=${v.javaClass.name} super=${v.javaClass.superclass?.name} ${v.width}x${v.height}")
+        }
+        if (v is ViewGroup) for (i in 0 until v.childCount) logFab(v.getChildAt(i), ids)
+    }
+
+    private fun logToolbar(root: View) {
+        val id = Utils.getID("toolbar", "id")
+        if (id <= 0) return
+        val t = root.findViewById<View>(id) as? ViewGroup ?: return
+        for (i in 0 until t.childCount) {
+            val c = t.getChildAt(i)
+            Log.i("ModX", "ModXGlass toolbar $i ${c.javaClass.simpleName} desc=${c.contentDescription} vis=${c.visibility}")
+        }
+    }
+
     private fun freeClip(bar: View) {
         var p = bar.parent as? ViewGroup
         var n = 0
@@ -263,9 +345,14 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
         val extend = xprefs.getBoolean("modx_glass_extend", false) &&
             !xprefs.getBoolean("floating_bottom_bar", false)
-        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner, !under, extend)
+        val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
+            xprefs.getInt("modx_liquid_strength", 40) else 0
+        bar.background = GlassDrawable(
+            bar, drawChild, blurDp * d, tint, corner, !under, extend, liquid
+        )
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
+        bar.postDelayed({ logFab(bar.rootView, fabIds); logToolbar(bar.rootView) }, 2500)
         if (extend) {
             freeClip(bar)
             bar.postDelayed({

@@ -584,4 +584,7 @@
     <string name="modx_glass_under_sum" translatable="false">La lista pasa por debajo de la barra inferior y el cristal desenfoca lo que hay detrás. Si algo se ve mal, apágalo</string>
     <string name="modx_glass_extend" translatable="false">Barra de cristal hasta el borde</string>
     <string name="modx_glass_extend_sum" translatable="false">El cristal de la barra inferior llega hasta el borde de la pantalla, sin franja vacía debajo</string>
+    <string name="modx_liquid" translatable="false">Liquid Glass</string>
+    <string name="modx_liquid_sum" translatable="false">Refracción, brillo en el borde y color vivo en la barra inferior (Android 13+, usa más GPU)</string>
+    <string name="modx_liquid_strength" translatable="false">Intensidad de la refracción</string>
 </resources>

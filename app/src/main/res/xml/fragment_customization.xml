@@ -287,6 +287,21 @@
             app:summary="@string/modx_glass_extend_sum"
             app:title="@string/modx_glass_extend" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_glass_bar"
+            app:key="modx_liquid"
+            app:summary="@string/modx_liquid_sum"
+            app:title="@string/modx_liquid" />
+
+        <SeekBarPreference
+            android:defaultValue="40"
+            android:max="100"
+            app:dependency="modx_liquid"
+            app:key="modx_liquid_strength"
+            app:min="5"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_liquid_strength" />
+
 
         <ListPreference
             android:defaultValue="0"
