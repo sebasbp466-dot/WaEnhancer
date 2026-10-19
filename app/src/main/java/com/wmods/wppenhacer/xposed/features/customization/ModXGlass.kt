@@ -18,6 +18,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.widget.LinearLayout
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.wmods.wppenhacer.xposed.core.Feature
 import com.wmods.wppenhacer.xposed.utils.Utils
@@ -28,13 +29,17 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
     private val installed = WeakHashMap<View, Boolean>()
+    private val padded = WeakHashMap<View, Boolean>()
+    private val fabDone = WeakHashMap<View, Boolean>()
+    private var lastScan = 0L
 
     private class GlassDrawable(
         private val bar: View,
         private val drawChild: Method,
         private val blurPx: Float,
         tint: Int,
-        private val corner: Float
+        private val corner: Float,
+        private val mirror: Boolean
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -68,11 +73,18 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                         while (p != null) {
                             p.getLocationInWindow(pLoc)
                             val save = rc.save()
-                            rc.translate(
-                                (pLoc[0] - barLoc[0]).toFloat(),
-                                (barLoc[1] - pLoc[1]).toFloat()
-                            )
-                            rc.scale(1f, -1f)
+                            if (mirror) {
+                                rc.translate(
+                                    (pLoc[0] - barLoc[0]).toFloat(),
+                                    (barLoc[1] - pLoc[1]).toFloat()
+                                )
+                                rc.scale(1f, -1f)
+                            } else {
+                                rc.translate(
+                                    (pLoc[0] - barLoc[0]).toFloat(),
+                                    (pLoc[1] - barLoc[1]).toFloat()
+                                )
+                            }
                             for (i in 0 until p.childCount) {
                                 val c = p.getChildAt(i)
                                 if (c !== child && c.visibility == View.VISIBLE) {
@@ -108,12 +120,17 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     @Throws(Exception::class)
     override fun doHook() {
         val enabled = xprefs.getBoolean("modx_glass_bar", false)
-        Log.i("ModX", "ModXGlass enabled=$enabled")
+        val under = xprefs.getBoolean("modx_glass_under", false) &&
+            !xprefs.getBoolean("floating_bottom_bar", false)
+        Log.i("ModX", "ModXGlass enabled=$enabled under=$under")
         if (!enabled || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val barId = Utils.getID("bottom_nav", "id")
         if (barId <= 0) return
         val blurDp = xprefs.getInt("modx_glass_blur", 20)
         val tintPct = xprefs.getInt("modx_glass_tint", 55)
+        val fabIds = arrayOf("fab", "fab_second", "extended_mini_fab")
+            .mapNotNull { n -> Utils.getID(n, "id").takeIf { id -> id > 0 } }
+            .toSet()
         val drawChild = ViewGroup::class.java.getDeclaredMethod(
             "drawChild", Canvas::class.java, View::class.java, Long::class.java
         )
@@ -127,30 +144,92 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             after {
                 val view = instance as? View ?: return@after
                 if (view.id != barId) return@after
-                view.post { install(view, drawChild, blurDp, tintPct) }
+                view.post { install(view, drawChild, blurDp, tintPct, under, fabIds) }
             }
         }
     }
 
-    private fun logTree(bar: View) {
-        var c: View = bar
-        var p = bar.parent as? ViewGroup
-        var lvl = 0
-        while (p != null && lvl < 8) {
-            Log.i("ModX", "ModXGlass nivel $lvl ${p.javaClass.name} hijos=${p.childCount} " +
-                "${p.left},${p.top},${p.right},${p.bottom}")
-            for (i in 0 until p.childCount) {
-                val k = p.getChildAt(i)
-                Log.i("ModX", "ModXGlass    $i${if (k === c) "*" else " "} ${k.javaClass.simpleName} " +
-                    "${k.left},${k.top},${k.right},${k.bottom} vis=${k.visibility}")
+    private fun isScroller(v: View): Boolean {
+        var k: Class<*>? = v.javaClass
+        while (k != null) {
+            when (k.name) {
+                "androidx.recyclerview.widget.RecyclerView",
+                "android.widget.AbsListView",
+                "android.widget.ScrollView",
+                "androidx.core.widget.NestedScrollView" -> return true
             }
-            c = p
-            p = p.parent as? ViewGroup
-            lvl++
+            k = k.superclass
+        }
+        return false
+    }
+
+    private fun scan(v: View, barH: Int, fabIds: Set<Int>, minH: Int) {
+        if (v is ViewGroup && isScroller(v)) {
+            val horizontal = v.canScrollHorizontally(1) || v.canScrollHorizontally(-1)
+            if (!horizontal) {
+                if (!padded.containsKey(v) && v.height >= minH) {
+                    v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, v.paddingBottom + barH)
+                    v.clipToPadding = false
+                    padded[v] = true
+                }
+                return
+            }
+        }
+        if (v.id in fabIds && !fabDone.containsKey(v)) {
+            val lp = v.layoutParams as? ViewGroup.MarginLayoutParams
+            if (lp != null) {
+                lp.bottomMargin += barH
+                v.layoutParams = lp
+                fabDone[v] = true
+            }
+        }
+        if (v is ViewGroup) {
+            for (i in 0 until v.childCount) scan(v.getChildAt(i), barH, fabIds, minH)
         }
     }
 
-    private fun install(bar: View, drawChild: Method, blurDp: Int, tintPct: Int) {
+    private fun applyUnder(bar: View, fabIds: Set<Int>) {
+        var anc: View = bar
+        var content: View? = null
+        var depth = 0
+        while (depth < 8 && content == null) {
+            val p = anc.parent as? ViewGroup ?: break
+            if (p is LinearLayout && p.orientation == LinearLayout.VERTICAL) {
+                val idx = p.indexOfChild(anc)
+                var best: View? = null
+                for (i in 0 until idx) {
+                    val c = p.getChildAt(i)
+                    if (c.visibility == View.VISIBLE && c.height > anc.height &&
+                        (best == null || c.height > best.height)
+                    ) best = c
+                }
+                if (best != null) {
+                    content = best
+                    break
+                }
+            }
+            anc = p
+            depth++
+        }
+        val c = content ?: run {
+            Log.w("ModX", "ModXGlass: no encontré el contenido bajo la barra")
+            return
+        }
+        val barH = anc.height
+        if (barH <= 0) return
+        val lp = c.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        if (lp.bottomMargin != -barH) {
+            lp.bottomMargin = -barH
+            c.layoutParams = lp
+            Log.i("ModX", "ModXGlass bajo-barra: contenido=${c.javaClass.simpleName} alto=${c.height} barra=$barH")
+        }
+        scan(c, barH, fabIds, barH * 3)
+    }
+
+    private fun install(
+        bar: View, drawChild: Method, blurDp: Int, tintPct: Int,
+        under: Boolean, fabIds: Set<Int>
+    ) {
         if (installed.containsKey(bar)) return
         val d = bar.resources.displayMetrics.density
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
@@ -159,13 +238,22 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val tint = ((tintPct.coerceIn(0, 100) * 255 / 100) shl 24) or base
         val corner = if (xprefs.getBoolean("floating_bottom_bar", false))
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
-        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner)
+        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner, !under)
         installed[bar] = true
-        logTree(bar)
+        if (under) applyUnder(bar, fabIds)
 
         val vto = bar.viewTreeObserver
         val scrollL = ViewTreeObserver.OnScrollChangedListener { bar.invalidate() }
-        val layoutL = ViewTreeObserver.OnGlobalLayoutListener { bar.invalidate() }
+        val layoutL = ViewTreeObserver.OnGlobalLayoutListener {
+            bar.invalidate()
+            if (under) {
+                val now = SystemClock.uptimeMillis()
+                if (now - lastScan > 400) {
+                    lastScan = now
+                    applyUnder(bar, fabIds)
+                }
+            }
+        }
         vto.addOnScrollChangedListener(scrollL)
         vto.addOnGlobalLayoutListener(layoutL)
         bar.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {

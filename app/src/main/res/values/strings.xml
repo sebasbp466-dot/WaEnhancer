@@ -580,4 +580,6 @@
     <string name="modx_glass_bar_sum" translatable="false">Fondo desenfocado y translúcido en la barra de Chats, Novedades, Comunidades y Llamadas (Android 12+)</string>
     <string name="modx_glass_blur" translatable="false">Intensidad del cristal</string>
     <string name="modx_glass_tint" translatable="false">Opacidad del tinte (%)</string>
+    <string name="modx_glass_under" translatable="false">Lista bajo la barra (experimental)</string>
+    <string name="modx_glass_under_sum" translatable="false">La lista pasa por debajo de la barra inferior y el cristal desenfoca lo que hay detrás. Si algo se ve mal, apágalo</string>
 </resources>

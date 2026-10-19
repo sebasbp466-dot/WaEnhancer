@@ -275,6 +275,12 @@
             app:showSeekBarValue="true"
             app:title="@string/modx_glass_tint" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_glass_bar"
+            app:key="modx_glass_under"
+            app:summary="@string/modx_glass_under_sum"
+            app:title="@string/modx_glass_under" />
+
 
         <ListPreference
             android:defaultValue="0"
