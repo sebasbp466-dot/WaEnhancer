@@ -1,0 +1,40 @@
+name: ModX Release
+on:
+  workflow_run:
+    workflows: ["Build WhatsApp"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Descargar el APK del build
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(gh run list --workflow=build-whatsapp.yml --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          fi
+          SHA=$(gh run view "$RUN_ID" --json headSha -q .headSha)
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+          mkdir -p out
+          gh run download "$RUN_ID" -D out
+          APK=$(find out -name "*.apk" | head -1)
+          [ -n "$APK" ] || { echo "No hay APK"; exit 1; }
+          cp "$APK" "WA-ModX-${SHA:0:7}.apk"
+      - name: Publicar release
+        run: |
+          TAG="modx-${SHA:0:7}"
+          FILE="WA-ModX-${SHA:0:7}.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber
+          else
+            gh release create "$TAG" "$FILE" --target "$SHA" --title "WA ModX ${SHA:0:7}" --generate-notes
+          fi

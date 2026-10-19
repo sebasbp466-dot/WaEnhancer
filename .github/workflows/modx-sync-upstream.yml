@@ -1,0 +1,45 @@
+name: ModX Sync Upstream
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Traer cambios del WaEnhancer original
+        id: merge
+        run: |
+          git config user.name "wamodx-bot"
+          git config user.email "wamodx-bot@users.noreply.github.com"
+          git remote add upstream https://github.com/Dev4Mod/WaEnhancer.git
+          git fetch upstream master
+          if git merge-base --is-ancestor upstream/master HEAD; then
+            echo "Sin cambios nuevos"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge upstream/master --no-commit --no-ff; then
+            git merge --abort
+            echo "::error::Conflicto con el original, hay que resolverlo a mano"
+            exit 1
+          fi
+          git restore --source=HEAD --staged --worktree -- .github
+          for f in $(git diff --cached --name-only --diff-filter=A -- .github); do git rm -qf "$f"; done
+          bash scripts/modx-rename.sh
+          git add -A
+          git commit -m "Sincronizar con WaEnhancer original"
+          git push origin HEAD:master
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Compilar
+        if: steps.merge.outputs.changed == 'true'
+        run: gh workflow run build-whatsapp.yml

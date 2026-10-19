@@ -1,6 +1,8 @@
 name: Build WhatsApp
 
 on:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 jobs:
