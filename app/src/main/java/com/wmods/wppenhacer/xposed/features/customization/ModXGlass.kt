@@ -31,7 +31,6 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
 
     private class GlassDrawable(
         private val bar: View,
-        private val parent: ViewGroup,
         private val drawChild: Method,
         private val blurPx: Float,
         tint: Int,
@@ -41,6 +40,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
         private val path = Path()
         private val rect = RectF()
+        private val barLoc = IntArray(2)
+        private val pLoc = IntArray(2)
         private var recording = false
 
         override fun draw(canvas: Canvas) {
@@ -59,13 +60,28 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                     )
                     val rc = node.beginRecording(w, h)
                     try {
-                        rc.translate(-bar.left.toFloat(), -bar.top.toFloat())
                         recording = true
+                        bar.getLocationInWindow(barLoc)
                         val now = SystemClock.uptimeMillis()
-                        val idx = parent.indexOfChild(bar)
-                        for (i in 0 until idx) {
-                            val c = parent.getChildAt(i)
-                            if (c.visibility == View.VISIBLE) drawChild.invoke(parent, rc, c, now)
+                        var child: View = bar
+                        var p = bar.parent as? ViewGroup
+                        while (p != null) {
+                            p.getLocationInWindow(pLoc)
+                            val save = rc.save()
+                            rc.translate(
+                                (pLoc[0] - barLoc[0]).toFloat(),
+                                (barLoc[1] - pLoc[1]).toFloat()
+                            )
+                            rc.scale(1f, -1f)
+                            for (i in 0 until p.childCount) {
+                                val c = p.getChildAt(i)
+                                if (c !== child && c.visibility == View.VISIBLE) {
+                                    drawChild.invoke(p, rc, c, now)
+                                }
+                            }
+                            rc.restoreToCount(save)
+                            child = p
+                            p = p.parent as? ViewGroup
                         }
                     } finally {
                         recording = false
@@ -116,9 +132,26 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
     }
 
+    private fun logTree(bar: View) {
+        var c: View = bar
+        var p = bar.parent as? ViewGroup
+        var lvl = 0
+        while (p != null && lvl < 8) {
+            Log.i("ModX", "ModXGlass nivel $lvl ${p.javaClass.name} hijos=${p.childCount} " +
+                "${p.left},${p.top},${p.right},${p.bottom}")
+            for (i in 0 until p.childCount) {
+                val k = p.getChildAt(i)
+                Log.i("ModX", "ModXGlass    $i${if (k === c) "*" else " "} ${k.javaClass.simpleName} " +
+                    "${k.left},${k.top},${k.right},${k.bottom} vis=${k.visibility}")
+            }
+            c = p
+            p = p.parent as? ViewGroup
+            lvl++
+        }
+    }
+
     private fun install(bar: View, drawChild: Method, blurDp: Int, tintPct: Int) {
         if (installed.containsKey(bar)) return
-        val parent = bar.parent as? ViewGroup ?: return
         val d = bar.resources.displayMetrics.density
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
@@ -126,12 +159,9 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val tint = ((tintPct.coerceIn(0, 100) * 255 / 100) shl 24) or base
         val corner = if (xprefs.getBoolean("floating_bottom_bar", false))
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
-        bar.background = GlassDrawable(bar, parent, drawChild, blurDp * d, tint, corner)
+        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner)
         installed[bar] = true
-        Log.i(
-            "ModX",
-            "ModXGlass instalado: padre=${parent.javaClass.name} hijos=${parent.childCount} indice=${parent.indexOfChild(bar)}"
-        )
+        logTree(bar)
 
         val vto = bar.viewTreeObserver
         val scrollL = ViewTreeObserver.OnScrollChangedListener { bar.invalidate() }
