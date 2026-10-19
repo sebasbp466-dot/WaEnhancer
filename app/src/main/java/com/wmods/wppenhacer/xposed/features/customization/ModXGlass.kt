@@ -217,10 +217,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
         val barH = anc.height
         if (barH <= 0) return
-        val lp = c.layoutParams as? ViewGroup.MarginLayoutParams ?: return
-        if (lp.bottomMargin != -barH) {
-            lp.bottomMargin = -barH
-            c.layoutParams = lp
+        val lp = anc.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        if (lp.topMargin != -barH) {
+            lp.topMargin = -barH
+            anc.layoutParams = lp
             Log.i("ModX", "ModXGlass bajo-barra: contenido=${c.javaClass.simpleName} alto=${c.height} barra=$barH")
         }
         scan(c, barH, fabIds, barH * 3)
