@@ -576,4 +576,8 @@
     <string name="modx_send_anim_sum" translatable="false">El botón de enviar rebota al tocarlo</string>
     <string name="modx_longpress_menu" translatable="false">Menú al mantener presionado</string>
     <string name="modx_longpress_menu_sum" translatable="false">Al seleccionar un mensaje o chat aparece un menú flotante con las opciones de la barra de arriba</string>
+    <string name="modx_glass_bar" translatable="false">Barra inferior de cristal</string>
+    <string name="modx_glass_bar_sum" translatable="false">Fondo desenfocado y translúcido en la barra de Chats, Novedades, Comunidades y Llamadas (Android 12+)</string>
+    <string name="modx_glass_blur" translatable="false">Intensidad del cristal</string>
+    <string name="modx_glass_tint" translatable="false">Opacidad del tinte (%)</string>
 </resources>

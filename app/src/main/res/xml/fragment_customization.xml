@@ -252,6 +252,29 @@
             app:summary="@string/modx_longpress_menu_sum"
             app:title="@string/modx_longpress_menu" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_glass_bar"
+            app:summary="@string/modx_glass_bar_sum"
+            app:title="@string/modx_glass_bar" />
+
+        <SeekBarPreference
+            android:defaultValue="20"
+            android:max="40"
+            app:dependency="modx_glass_bar"
+            app:key="modx_glass_blur"
+            app:min="4"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_glass_blur" />
+
+        <SeekBarPreference
+            android:defaultValue="55"
+            android:max="90"
+            app:dependency="modx_glass_bar"
+            app:key="modx_glass_tint"
+            app:min="10"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_glass_tint" />
+
 
         <ListPreference
             android:defaultValue="0"
