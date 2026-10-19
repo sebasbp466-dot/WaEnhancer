@@ -39,7 +39,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val blurPx: Float,
         tint: Int,
         private val corner: Float,
-        private val mirror: Boolean
+        private val mirror: Boolean,
+        private val extend: Boolean
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -52,8 +53,19 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         override fun draw(canvas: Canvas) {
             if (recording) return
             val w = bounds.width()
-            val h = bounds.height()
-            if (w <= 0 || h <= 0) return
+            val barH = bounds.height()
+            if (w <= 0 || barH <= 0) return
+            bar.getLocationInWindow(barLoc)
+            var extra = 0
+            if (extend) {
+                val ins = bar.rootWindowInsets
+                val nav = if (ins != null) {
+                    ins.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars()).bottom
+                } else 0
+                val gap = bar.rootView.height - (barLoc[1] + barH)
+                extra = minOf(nav, gap).coerceAtLeast(0)
+            }
+            val h = barH + extra
             rect.set(0f, 0f, w.toFloat(), h.toFloat())
             path.reset()
             path.addRoundRect(rect, corner, corner, Path.Direction.CW)
@@ -226,6 +238,17 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         scan(c, barH, fabIds, barH * 3)
     }
 
+    private fun freeClip(bar: View) {
+        var p = bar.parent as? ViewGroup
+        var n = 0
+        while (p != null && n < 12) {
+            p.clipChildren = false
+            p.clipToPadding = false
+            p = p.parent as? ViewGroup
+            n++
+        }
+    }
+
     private fun install(
         bar: View, drawChild: Method, blurDp: Int, tintPct: Int,
         under: Boolean, fabIds: Set<Int>
@@ -238,9 +261,26 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val tint = ((tintPct.coerceIn(0, 100) * 255 / 100) shl 24) or base
         val corner = if (xprefs.getBoolean("floating_bottom_bar", false))
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
-        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner, !under)
+        val extend = xprefs.getBoolean("modx_glass_extend", false) &&
+            !xprefs.getBoolean("floating_bottom_bar", false)
+        bar.background = GlassDrawable(bar, drawChild, blurDp * d, tint, corner, !under, extend)
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
+        if (extend) {
+            freeClip(bar)
+            bar.postDelayed({
+                val ins = bar.rootWindowInsets
+                val nav = ins?.getInsetsIgnoringVisibility(
+                    android.view.WindowInsets.Type.navigationBars()
+                )?.bottom ?: -1
+                val loc = IntArray(2)
+                bar.getLocationInWindow(loc)
+                Log.i(
+                    "ModX",
+                    "ModXGlass extend: root=${bar.rootView.height} barTop=${loc[1]} barH=${bar.height} nav=$nav"
+                )
+            }, 1500)
+        }
 
         val vto = bar.viewTreeObserver
         val scrollL = ViewTreeObserver.OnScrollChangedListener { bar.invalidate() }

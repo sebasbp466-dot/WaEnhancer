@@ -281,6 +281,12 @@
             app:summary="@string/modx_glass_under_sum"
             app:title="@string/modx_glass_under" />
 
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_glass_bar"
+            app:key="modx_glass_extend"
+            app:summary="@string/modx_glass_extend_sum"
+            app:title="@string/modx_glass_extend" />
+
 
         <ListPreference
             android:defaultValue="0"
