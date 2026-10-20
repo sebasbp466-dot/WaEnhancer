@@ -446,9 +446,9 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (ind.javaClass.simpleName != "View") continue
             if (ind.tag == "modx_tab") continue
             val gd = android.graphics.drawable.GradientDrawable()
-            gd.setColor(xprefs.getInt("modx_tab_color", 0).let { if (it != 0) it else if (dark) 0x22FFFFFF else 0x38FFFFFF })
+            gd.setColor(xprefs.getInt("modx_tab_color", 0).let { if (it != 0) it else if (dark) ((xprefs.getInt("modx_tab_dark", 5) * 255 / 100) shl 24) or 0xFFFFFF else 0x38FFFFFF })
             gd.cornerRadius = 1000f
-            gd.setStroke(maxOf(1, (1 * d).toInt()), if (dark) 0x24FFFFFF else 0x59FFFFFF)
+            gd.setStroke(maxOf(1, (1 * d).toInt()), if (dark) ((xprefs.getInt("modx_tab_dark", 5) * 255 / 100 * 7 / 10) shl 24) or 0xFFFFFF else 0x59FFFFFF)
             ind.background = gd
             ind.tag = "modx_tab"
         }

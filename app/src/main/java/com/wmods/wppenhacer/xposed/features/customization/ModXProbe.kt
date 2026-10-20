@@ -110,7 +110,15 @@ class ModXProbe(loader: ClassLoader, preferences: SharedPreferences) :
             n++
         }
         val g = list as ViewGroup
-        for (i in 0 until minOf(2, g.childCount)) dumpTree(g.getChildAt(i), 0, 4)
+        var shown = 0
+        for (i in 0 until g.childCount) {
+            val c = g.getChildAt(i)
+            if (c.height > 100 && shown < 2) {
+                Log.i("ModX", "ModXProbe --- fila real indice $i")
+                dumpTree(c, 0, 5)
+                shown++
+            }
+        }
     }
 
     override fun getPluginName(): String = "ModX Probe"
