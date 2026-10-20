@@ -57,7 +57,9 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
         val anim = (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_animations", false))
         val motionBlur = anim && xprefs.getBoolean("modx_motion_blur", false)
         android.util.Log.i("ModX", "ModXStyle m3=$m3 anim=$anim motionBlur=$motionBlur")
-        if (!m3 && !anim) return
+        val m3blur = xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_m3_blur", false)
+        val m3blurDp = xprefs.getInt("modx_m3_blur_radius", 16)
+        if (!m3 && !anim && !m3blur) return
 
         Dialog::class.java.resolve().firstMethod {
             name = "show"
@@ -69,6 +71,12 @@ class ModXStyle(loader: ClassLoader, preferences: SharedPreferences) :
                 val window = dialog.window ?: return@after
                 val decor = window.decorView
                 val attrs = window.attributes
+                if (m3blur && android.os.Build.VERSION.SDK_INT >= 31) {
+                    val ba = window.attributes
+                    ba.flags = ba.flags or android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+                    ba.blurBehindRadius = (m3blurDp * dialog.context.resources.displayMetrics.density).toInt()
+                    window.attributes = ba
+                }
                 val floating = attrs.width == ViewGroup.LayoutParams.WRAP_CONTENT &&
                     attrs.height == ViewGroup.LayoutParams.WRAP_CONTENT
                 if (!floating) return@after

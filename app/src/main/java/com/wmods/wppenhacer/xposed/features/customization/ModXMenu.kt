@@ -187,8 +187,8 @@ class ModXMenu(loader: ClassLoader, preferences: SharedPreferences) :
         popup = pw
         try {
             pw.showAtLocation(bar.rootView, Gravity.NO_GRAVITY, x, y)
-            val blurBehind = if ((xprefs.getBoolean("modx_lg", false) && xprefs.getBoolean("modx_blur", false)))
-                xprefs.getInt("modx_blur_radius", 16) else 0
+            val blurBehind = if (xprefs.getBoolean("modx_m3", false) && xprefs.getBoolean("modx_m3_blur", false))
+                xprefs.getInt("modx_m3_blur_radius", 16) else 0
             if (blurBehind > 0 && android.os.Build.VERSION.SDK_INT >= 31) {
                 try {
                     val root = pw.contentView.rootView

@@ -597,4 +597,25 @@
     <string name="modx_m3_dynamic_sum" translatable="false">Diálogos y menús usan la paleta de tu fondo de pantalla (Android 12+)</string>
     <string name="modx_liquid_blur" translatable="false">Desenfoque del cristal líquido</string>
     <string name="modx_liquid_tint" translatable="false">Tinte del cristal líquido</string>
+    <string name="modx_liquid_disp" translatable="false">Dispersión de color</string>
+    <string name="modx_liquid_rim" translatable="false">Brillo del borde</string>
+    <string name="modx_liquid_sat" translatable="false">Saturación (%)</string>
+    <string name="modx_ios_tab" translatable="false">Cápsula de pestaña estilo iPhone</string>
+    <string name="modx_ios_tab_sum" translatable="false">La pestaña activa se marca con una cápsula clara y translúcida</string>
+    <string name="modx_m3_blur" translatable="false">Blur propio de Material 3</string>
+    <string name="modx_m3_blur_sum" translatable="false">Desenfoca el fondo detrás de diálogos y del menú al mantener presionado</string>
+    <string name="modx_m3_blur_radius" translatable="false">Intensidad del blur Material 3</string>
+    <string name="modx_cat_min" translatable="false">Modo minimalista</string>
+    <string name="modx_min" translatable="false">Activar modo minimalista</string>
+    <string name="modx_min_sum" translatable="false">Quita elementos de la pantalla principal. Si lo apagas, todas sus opciones se desactivan</string>
+    <string name="modx_min_icons" translatable="false">Ocultar íconos de arriba</string>
+    <string name="modx_min_icons_sum" translatable="false">Quita cámara, recargar, fantasma, ojo y nuevo chat. Deja el menú de tres puntos</string>
+    <string name="modx_min_title" translatable="false">Ocultar el título</string>
+    <string name="modx_min_title_sum" translatable="false">Quita la palabra WhatsApp de la barra superior</string>
+    <string name="modx_min_search" translatable="false">Ocultar la búsqueda</string>
+    <string name="modx_min_search_sum" translatable="false">Quita la barra Buscar de la lista de chats</string>
+    <string name="modx_min_topbar" translatable="false">Quitar la barra superior completa</string>
+    <string name="modx_min_topbar_sum" translatable="false">Esconde también el menú de tres puntos. Para abrir los ajustes de WhatsApp apaga esta opción</string>
+    <string name="modx_min_labels" translatable="false">Barra inferior solo con íconos</string>
+    <string name="modx_min_labels_sum" translatable="false">Quita los textos Chats, Novedades, Comunidades y Llamadas</string>
 </resources>

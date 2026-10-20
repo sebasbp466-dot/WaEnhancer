@@ -29,43 +29,74 @@ import java.util.WeakHashMap
 
 private val LIQUID_AGSL = """
 uniform shader contents;
-uniform float4 box;
+uniform float2 size;
 uniform float radius;
-uniform float bevel;
-uniform float refr;
+uniform float lensW;
+uniform float lensAmt;
+uniform float disp;
+uniform float rimGain;
+uniform float sat;
+uniform float frost;
+uniform float2 light;
 
-float sdBox(float2 p, float2 b, float r) {
+float sdRound(float2 p, float2 b, float r) {
     float2 q = abs(p) - b + float2(r);
     return min(max(q.x, q.y), 0.0) + length(max(q, float2(0.0))) - r;
 }
 
+float rnd(float2 p) {
+    return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
 half4 main(float2 fc) {
-    float2 ctr = float2((box.x + box.z) * 0.5, (box.y + box.w) * 0.5);
-    float2 hb = float2((box.z - box.x) * 0.5, (box.w - box.y) * 0.5);
-    float2 p = fc - ctr;
-    float d = sdBox(p, hb, radius);
+    float2 hb = size * 0.5;
+    float2 p = fc - hb;
+    float d = sdRound(p, hb, radius);
+    if (d > 1.0) {
+        return half4(0.0);
+    }
     float e = 1.0;
     float2 g = float2(
-        sdBox(p + float2(e, 0.0), hb, radius) - sdBox(p - float2(e, 0.0), hb, radius),
-        sdBox(p + float2(0.0, e), hb, radius) - sdBox(p - float2(0.0, e), hb, radius));
-    g = g / max(length(g), 0.0001);
-    float depth = clamp(-d / bevel, 0.0, 1.0);
-    float lens = pow(1.0 - depth, 2.0);
-    float2 uvc = ctr + p * 0.94;
-    float2 off = g * lens * refr;
-    half4 cr = contents.eval(uvc - off);
-    half4 cg = contents.eval(uvc - off * 0.86);
-    half4 cb = contents.eval(uvc - off * 0.72);
+        sdRound(p + float2(e, 0.0), hb, radius) - sdRound(p - float2(e, 0.0), hb, radius),
+        sdRound(p + float2(0.0, e), hb, radius) - sdRound(p - float2(0.0, e), hb, radius));
+    float gl = length(g);
+    float2 n = g / max(gl, 0.0001);
+
+    float rim = 1.0 - clamp(-d / lensW, 0.0, 1.0);
+    float axisFade = smoothstep(0.6, 1.6, gl);
+    float edgeGuard = smoothstep(0.0, 5.0, -d);
+    float bend = rim * rim * axisFade * edgeGuard;
+    float2 off = n * bend * lensAmt;
+    float2 ca = n * bend * lensAmt * (0.015 + 0.07 * disp);
+    float2 lo = float2(0.5);
+    float2 hi = size - float2(0.5);
+    float2 uv = fc - off;
+    half4 cr = contents.eval(clamp(uv + ca, lo, hi));
+    half4 cg = contents.eval(clamp(uv, lo, hi));
+    half4 cb = contents.eval(clamp(uv - ca, lo, hi));
+
     half a = max(cr.a, max(cg.a, cb.a));
-    half3 col = half3(cr.r, cg.g, cb.b);
-    half l = dot(col, half3(0.299, 0.587, 0.114));
-    col = mix(half3(l), col, half(1.45));
-    col = col * half(1.08) + half3(0.015);
-    float rim = pow(1.0 - depth, 5.0);
-    float lit = clamp(dot(g, normalize(float2(-0.55, -0.83))), 0.0, 1.0);
-    float lit2 = clamp(dot(g, normalize(float2(0.6, 0.8))), 0.0, 1.0);
-    col += half3((rim * (0.20 + 0.9 * lit + 0.35 * lit2)) * a);
-    return half4(col, a);
+    half3 src = half3(cr.r, cg.g, cb.b);
+    half l = dot(src, half3(0.2126, 0.7152, 0.0722));
+    half3 col = half3(l) + (src - half3(l)) * half(sat);
+    float lum = float(l) / max(float(a), 0.001);
+    float adapt = clamp((1.0 - lum) * frost, 0.0, 0.5);
+    col = mix(col, half3(0.82) * a, half(adapt));
+
+    float2 L = normalize(light);
+    float lit = clamp(dot(n, L), 0.0, 1.0);
+    float back = clamp(dot(n, -L), 0.0, 1.0);
+    float rimLine = 1.0 - smoothstep(0.0, 2.2, -d);
+    float rimBand = 1.0 - smoothstep(0.0, 8.0, -d);
+    float inner = (1.0 - smoothstep(2.0, 18.0, -d)) * back;
+    col = col * half(1.0 - 0.20 * inner);
+    float t = clamp(fc.x / size.x * 0.55 + fc.y / size.y * 0.45, 0.0, 1.0);
+    float s = (rimLine * (0.30 + 1.0 * lit) + rimBand * (0.10 * lit + 0.14 * back) + 0.05 * (1.0 - t)) * rimGain;
+    s = clamp(s, 0.0, 0.9);
+    half3 outc = col * half(1.0 - s) + half3(half(s));
+    half outa = a + half(s) * (half(1.0) - a);
+    outc += half3(half((rnd(fc) - 0.5) / 255.0));
+    return half4(outc, outa);
 }
 """
 
@@ -85,7 +116,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val cornerFixed: Float,
         private val mirror: Boolean,
         private val extend: Boolean,
-        private val liquid: Int
+        private val liquid: Int,
+        private val dispersion: Int,
+        private val rimGain: Int,
+        private val sat: Int
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -104,10 +138,15 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (liquid <= 0 || shaderFailed || Build.VERSION.SDK_INT < 33) return blur
             return try {
                 val sh = shader ?: RuntimeShader(LIQUID_AGSL).also { shader = it }
-                sh.setFloatUniform("box", 0f, 0f, gw.toFloat(), gh.toFloat())
+                sh.setFloatUniform("size", gw.toFloat(), gh.toFloat())
                 sh.setFloatUniform("radius", corner)
-                sh.setFloatUniform("bevel", gh * 0.55f)
-                sh.setFloatUniform("refr", liquid / 100f * 0.9f * gh)
+                sh.setFloatUniform("lensW", gh * 0.30f)
+                sh.setFloatUniform("lensAmt", liquid / 100f * 0.40f * gh)
+                sh.setFloatUniform("disp", dispersion / 100f)
+                sh.setFloatUniform("rimGain", rimGain / 100f)
+                sh.setFloatUniform("sat", sat / 100f)
+                sh.setFloatUniform("frost", 0.12f)
+                sh.setFloatUniform("light", -0.5f, -0.85f)
                 RenderEffect.createChainEffect(
                     RenderEffect.createRuntimeShaderEffect(sh, "contents"), blur
                 )
@@ -211,11 +250,11 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                     strokeKey = key
                     strokePaint.shader = LinearGradient(
                         left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(),
-                        intArrayOf(0xB3FFFFFF.toInt(), 0x14FFFFFF, 0x66FFFFFF),
+                        intArrayOf(0x66FFFFFF, 0x0AFFFFFF, 0x40FFFFFF),
                         floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP
                     )
                 }
-                strokePaint.strokeWidth = 1.4f * d
+                strokePaint.strokeWidth = 1.0f * d
                 canvas.drawPath(path, strokePaint)
             }
         }
@@ -361,29 +400,6 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         if (id > 0) bar.rootView.findViewById<View>(id)?.alpha = 0f
     }
 
-    private fun logFab(v: View, ids: Set<Int>) {
-        if (v.id in ids) {
-            Log.i("ModX", "ModXGlass fab: clase=${v.javaClass.name} super=${v.javaClass.superclass?.name} ${v.width}x${v.height}")
-        }
-        if (v is ViewGroup) for (i in 0 until v.childCount) logFab(v.getChildAt(i), ids)
-    }
-
-    private fun logToolbar(root: View) {
-        val id = Utils.getID("toolbar", "id")
-        if (id <= 0) return
-        val t = root.findViewById<View>(id) as? ViewGroup ?: return
-        for (i in 0 until t.childCount) {
-            val c = t.getChildAt(i)
-            Log.i("ModX", "ModXGlass toolbar $i ${c.javaClass.simpleName} desc=${c.contentDescription} vis=${c.visibility}")
-        }
-    }
-
-    private fun logBarTree(v: View, depth: Int) {
-        if (depth > 4) return
-        Log.i("ModX", "ModXGlass bar ${"  ".repeat(depth)}${v.javaClass.simpleName} id=${v.id} ${v.width}x${v.height}")
-        if (v is ViewGroup) for (i in 0 until v.childCount) logBarTree(v.getChildAt(i), depth + 1)
-    }
-
     private fun freeClip(bar: View) {
         var p = bar.parent as? ViewGroup
         var n = 0
@@ -404,18 +420,21 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
             xprefs.getInt("modx_liquid_strength", 60) else 0
         val iosTab = liquid > 0 && xprefs.getBoolean("modx_ios_tab", false)
-        val effBlur = if (liquid > 0) xprefs.getInt("modx_liquid_blur", 8).toFloat() else blurDp.toFloat()
-        val effTint = if (liquid > 0) xprefs.getInt("modx_liquid_tint", 18).toFloat() else tintPct.toFloat()
+        val effBlur = if (liquid > 0) xprefs.getInt("modx_liquid_blur", 4).toFloat() else blurDp.toFloat()
+        val effTint = if (liquid > 0) xprefs.getInt("modx_liquid_tint", 8).toFloat() else tintPct.toFloat()
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-        val base = if (night) 0x1D1B20 else 0xFEF7FF
+        val base = if (liquid > 0) 0xFFFFFF else if (night) 0x1D1B20 else 0xFEF7FF
         val tint = ((effTint.coerceIn(0f, 100f) * 255f / 100f).toInt() shl 24) or base
         val corner = if (xprefs.getBoolean("floating_bottom_bar", false))
             xprefs.getInt("floating_bottom_bar_radius", 24) * d else 0f
         val extend = xprefs.getBoolean("modx_glass_extend", false) &&
             !xprefs.getBoolean("floating_bottom_bar", false) && liquid == 0
         bar.background = GlassDrawable(
-            bar, drawChild, effBlur * d, tint, corner, !under, extend, liquid
+            bar, drawChild, effBlur * d, tint, corner, !under, extend, liquid,
+            xprefs.getInt("modx_liquid_disp", 25),
+            xprefs.getInt("modx_liquid_rim", 70),
+            xprefs.getInt("modx_liquid_sat", 125)
         )
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
@@ -424,25 +443,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         bar.postDelayed({
             if (liquid > 0) hideDivider(bar)
             if (iosTab) styleTabs(bar)
-            logFab(bar.rootView, fabIds)
-            logToolbar(bar.rootView)
-            logBarTree(bar, 0)
         }, 2500)
-        if (extend) {
-            freeClip(bar)
-            bar.postDelayed({
-                val ins = bar.rootWindowInsets
-                val nav = ins?.getInsetsIgnoringVisibility(
-                    android.view.WindowInsets.Type.navigationBars()
-                )?.bottom ?: -1
-                val loc = IntArray(2)
-                bar.getLocationInWindow(loc)
-                Log.i(
-                    "ModX",
-                    "ModXGlass extend: root=${bar.rootView.height} barTop=${loc[1]} barH=${bar.height} nav=$nav"
-                )
-            }, 1500)
-        }
+        if (extend) freeClip(bar)
 
         val vto = bar.viewTreeObserver
         val scrollL = ViewTreeObserver.OnScrollChangedListener { bar.invalidate() }

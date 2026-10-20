@@ -63,7 +63,7 @@
             app:title="@string/modx_liquid_strength" />
 
         <SeekBarPreference
-            android:defaultValue="8"
+            android:defaultValue="4"
             android:max="30"
             app:dependency="modx_liquid"
             app:key="modx_liquid_blur"
@@ -72,13 +72,46 @@
             app:title="@string/modx_liquid_blur" />
 
         <SeekBarPreference
-            android:defaultValue="18"
+            android:defaultValue="8"
             android:max="60"
             app:dependency="modx_liquid"
             app:key="modx_liquid_tint"
             app:min="0"
             app:showSeekBarValue="true"
             app:title="@string/modx_liquid_tint" />
+
+        <SeekBarPreference
+            android:defaultValue="25"
+            android:max="100"
+            app:dependency="modx_liquid"
+            app:key="modx_liquid_disp"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_liquid_disp" />
+
+        <SeekBarPreference
+            android:defaultValue="70"
+            android:max="100"
+            app:dependency="modx_liquid"
+            app:key="modx_liquid_rim"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_liquid_rim" />
+
+        <SeekBarPreference
+            android:defaultValue="125"
+            android:max="200"
+            app:dependency="modx_liquid"
+            app:key="modx_liquid_sat"
+            app:min="100"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_liquid_sat" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_liquid"
+            app:key="modx_ios_tab"
+            app:summary="@string/modx_ios_tab_sum"
+            app:title="@string/modx_ios_tab" />
 
         <rikka.material.preference.MaterialSwitchPreference
             app:dependency="modx_lg"
@@ -134,6 +167,21 @@
 
         <rikka.material.preference.MaterialSwitchPreference
             app:dependency="modx_m3"
+            app:key="modx_m3_blur"
+            app:summary="@string/modx_m3_blur_sum"
+            app:title="@string/modx_m3_blur" />
+
+        <SeekBarPreference
+            android:defaultValue="16"
+            android:max="40"
+            app:dependency="modx_m3_blur"
+            app:key="modx_m3_blur_radius"
+            app:min="1"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_m3_blur_radius" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_m3"
             app:key="modx_animations"
             app:summary="@string/modx_animations_sum"
             app:title="@string/modx_animations" />
@@ -155,6 +203,46 @@
             app:key="modx_longpress_menu"
             app:summary="@string/modx_longpress_menu_sum"
             app:title="@string/modx_longpress_menu" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/modx_cat_min">
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_min"
+            app:summary="@string/modx_min_sum"
+            app:title="@string/modx_min" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_min"
+            app:key="modx_min_icons"
+            app:summary="@string/modx_min_icons_sum"
+            app:title="@string/modx_min_icons" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_min"
+            app:key="modx_min_title"
+            app:summary="@string/modx_min_title_sum"
+            app:title="@string/modx_min_title" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_min"
+            app:key="modx_min_search"
+            app:summary="@string/modx_min_search_sum"
+            app:title="@string/modx_min_search" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_min"
+            app:key="modx_min_topbar"
+            app:summary="@string/modx_min_topbar_sum"
+            app:title="@string/modx_min_topbar" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_min"
+            app:key="modx_min_labels"
+            app:summary="@string/modx_min_labels_sum"
+            app:title="@string/modx_min_labels" />
     </PreferenceCategory>
 
 
