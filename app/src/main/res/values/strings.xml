@@ -618,4 +618,19 @@
     <string name="modx_min_topbar_sum" translatable="false">Esconde también el menú de tres puntos. Para abrir los ajustes de WhatsApp apaga esta opción</string>
     <string name="modx_min_labels" translatable="false">Barra inferior solo con íconos</string>
     <string name="modx_min_labels_sum" translatable="false">Quita los textos Chats, Novedades, Comunidades y Llamadas</string>
+    <string name="modx_glass_mode" translatable="false">Modo del cristal</string>
+    <string name="modx_glass_mode_sum" translatable="false">Automático sigue el tema de WhatsApp</string>
+    <string name="modx_glass_color" translatable="false">Color del cristal</string>
+    <string name="modx_light_angle" translatable="false">Ángulo de la luz</string>
+    <string name="modx_pill_margin" translatable="false">Margen lateral de la píldora</string>
+    <string name="modx_pill_round" translatable="false">Redondeo de la píldora (%)</string>
+    <string name="modx_tab_color" translatable="false">Color de la cápsula de pestaña</string>
+    <string name="modx_cat_x" translatable="false">Extras</string>
+    <string name="modx_x" translatable="false">Activar extras</string>
+    <string name="modx_x_sum" translatable="false">Opciones extra de personalización. Si lo apagas, se desactivan</string>
+    <string name="modx_fab_color" translatable="false">Color del botón flotante</string>
+    <string name="modx_fab_hide" translatable="false">Ocultar el botón flotante</string>
+    <string name="modx_fab_hide_sum" translatable="false">Quita el botón verde de nuevo chat</string>
+    <string name="modx_probe" translatable="false">Escribir diagnóstico en el registro</string>
+    <string name="modx_probe_sum" translatable="false">Guarda en el registro la estructura de la lista de chats. Ayuda a depurar</string>
 </resources>

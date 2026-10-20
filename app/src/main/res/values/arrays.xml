@@ -241,4 +241,14 @@
         <item>2</item>
         <item>6</item>
     </string-array>
+    <string-array name="modx_glass_mode_entries" translatable="false">
+        <item>Automático (sigue el tema)</item>
+        <item>Claro</item>
+        <item>Oscuro</item>
+    </string-array>
+    <string-array name="modx_glass_mode_values" translatable="false">
+        <item>auto</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
 </resources>

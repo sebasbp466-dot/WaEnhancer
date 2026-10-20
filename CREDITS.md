@@ -1,0 +1,2 @@
+- Liquid Glass de WA ModX: técnica inspirada en Kyant0/AndroidLiquidGlass (Apache-2.0) y en artículos sobre shaders AGSL. El shader es propio.
+- WA ModX es un fork de WaEnhancer (Dev4Mod).

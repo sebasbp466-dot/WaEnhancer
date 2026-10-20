@@ -99,7 +99,7 @@
             app:title="@string/modx_liquid_rim" />
 
         <SeekBarPreference
-            android:defaultValue="125"
+            android:defaultValue="140"
             android:max="200"
             app:dependency="modx_liquid"
             app:key="modx_liquid_sat"
@@ -107,11 +107,63 @@
             app:showSeekBarValue="true"
             app:title="@string/modx_liquid_sat" />
 
+        <ListPreference
+            app:defaultValue="auto"
+            app:dependency="modx_liquid"
+            app:entries="@array/modx_glass_mode_entries"
+            app:entryValues="@array/modx_glass_mode_values"
+            app:key="modx_glass_mode"
+            app:summary="%s"
+            app:title="@string/modx_glass_mode" />
+
+        <com.wmods.wppenhacer.preference.FeatureColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:dependency="modx_liquid"
+            app:icon="@drawable/ic_customization_palette_24"
+            app:key="modx_glass_color"
+            app:summary="@string/default_color"
+            app:title="@string/modx_glass_color" />
+
+        <SeekBarPreference
+            android:defaultValue="240"
+            android:max="359"
+            app:dependency="modx_liquid"
+            app:key="modx_light_angle"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_light_angle" />
+
+        <SeekBarPreference
+            android:defaultValue="12"
+            android:max="40"
+            app:dependency="modx_liquid"
+            app:key="modx_pill_margin"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_pill_margin" />
+
+        <SeekBarPreference
+            android:defaultValue="100"
+            android:max="100"
+            app:dependency="modx_liquid"
+            app:key="modx_pill_round"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_pill_round" />
+
         <rikka.material.preference.MaterialSwitchPreference
             app:dependency="modx_liquid"
             app:key="modx_ios_tab"
             app:summary="@string/modx_ios_tab_sum"
             app:title="@string/modx_ios_tab" />
+
+        <com.wmods.wppenhacer.preference.FeatureColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:dependency="modx_ios_tab"
+            app:icon="@drawable/ic_customization_palette_24"
+            app:key="modx_tab_color"
+            app:summary="@string/default_color"
+            app:title="@string/modx_tab_color" />
 
         <rikka.material.preference.MaterialSwitchPreference
             app:dependency="modx_lg"
@@ -243,6 +295,36 @@
             app:key="modx_min_labels"
             app:summary="@string/modx_min_labels_sum"
             app:title="@string/modx_min_labels" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/modx_cat_x">
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:key="modx_x"
+            app:summary="@string/modx_x_sum"
+            app:title="@string/modx_x" />
+
+        <com.wmods.wppenhacer.preference.FeatureColorPreferenceCompat
+            app:cpv_showAlphaSlider="true"
+            app:dependency="modx_x"
+            app:icon="@drawable/ic_customization_palette_24"
+            app:key="modx_fab_color"
+            app:summary="@string/default_color"
+            app:title="@string/modx_fab_color" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_x"
+            app:key="modx_fab_hide"
+            app:summary="@string/modx_fab_hide_sum"
+            app:title="@string/modx_fab_hide" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:defaultValue="true"
+            app:key="modx_probe"
+            app:summary="@string/modx_probe_sum"
+            app:title="@string/modx_probe" />
     </PreferenceCategory>
 
 
