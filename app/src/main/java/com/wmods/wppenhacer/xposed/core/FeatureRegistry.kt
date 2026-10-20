@@ -9,6 +9,7 @@ import com.wmods.wppenhacer.xposed.features.customization.ModXStyle
 import com.wmods.wppenhacer.xposed.features.customization.ModXMotion
 import com.wmods.wppenhacer.xposed.features.customization.ModXMenu
 import com.wmods.wppenhacer.xposed.features.customization.ModXGlass
+import com.wmods.wppenhacer.xposed.features.customization.ModXMinimal
 import com.wmods.wppenhacer.xposed.features.customization.CustomToolbar
 import com.wmods.wppenhacer.xposed.features.customization.CustomView
 import com.wmods.wppenhacer.xposed.features.customization.DefaultEmoji
@@ -110,6 +111,7 @@ internal object FeatureRegistry {
         ModXMotion::class.java,
         ModXMenu::class.java,
         ModXGlass::class.java,
+        ModXMinimal::class.java,
         ShareLimit::class.java,
         StatusDownload::class.java,
         ViewOnce::class.java,

@@ -337,6 +337,25 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         scan(c, barH, fabIds, barH * 3)
     }
 
+    private fun styleTabs(bar: View) {
+        val d = bar.resources.displayMetrics.density
+        val g = bar as? ViewGroup ?: return
+        val row = g.getChildAt(0) as? ViewGroup ?: return
+        for (i in 0 until row.childCount) {
+            val tab = row.getChildAt(i) as? ViewGroup ?: continue
+            val fl = tab.getChildAt(0) as? ViewGroup ?: continue
+            val ind = fl.getChildAt(0) ?: continue
+            if (ind.javaClass.simpleName != "View") continue
+            if (ind.tag == "modx_tab") continue
+            val gd = android.graphics.drawable.GradientDrawable()
+            gd.setColor(0x38FFFFFF)
+            gd.cornerRadius = 1000f
+            gd.setStroke(maxOf(1, (1 * d).toInt()), 0x59FFFFFF)
+            ind.background = gd
+            ind.tag = "modx_tab"
+        }
+    }
+
     private fun hideDivider(bar: View) {
         val id = Utils.getID("bottom_nav_divider", "id")
         if (id > 0) bar.rootView.findViewById<View>(id)?.alpha = 0f
@@ -384,6 +403,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val d = bar.resources.displayMetrics.density
         val liquid = if (xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
             xprefs.getInt("modx_liquid_strength", 60) else 0
+        val iosTab = liquid > 0 && xprefs.getBoolean("modx_ios_tab", false)
         val effBlur = if (liquid > 0) xprefs.getInt("modx_liquid_blur", 8).toFloat() else blurDp.toFloat()
         val effTint = if (liquid > 0) xprefs.getInt("modx_liquid_tint", 18).toFloat() else tintPct.toFloat()
         val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
@@ -400,8 +420,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
         if (liquid > 0) hideDivider(bar)
+        if (iosTab) styleTabs(bar)
         bar.postDelayed({
             if (liquid > 0) hideDivider(bar)
+            if (iosTab) styleTabs(bar)
             logFab(bar.rootView, fabIds)
             logToolbar(bar.rootView)
             logBarTree(bar, 0)
@@ -426,6 +448,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val scrollL = ViewTreeObserver.OnScrollChangedListener { bar.invalidate() }
         val layoutL = ViewTreeObserver.OnGlobalLayoutListener {
             bar.invalidate()
+            if (iosTab) styleTabs(bar)
             if (under) {
                 val now = SystemClock.uptimeMillis()
                 if (now - lastScan > 400) {
