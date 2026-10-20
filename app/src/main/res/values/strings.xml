@@ -633,4 +633,6 @@
     <string name="modx_fab_hide_sum" translatable="false">Quita el botón verde de nuevo chat</string>
     <string name="modx_probe" translatable="false">Escribir diagnóstico en el registro</string>
     <string name="modx_probe_sum" translatable="false">Guarda en el registro la estructura de la lista de chats. Ayuda a depurar</string>
+    <string name="modx_liquid_bg" translatable="false">Fondo opaco bajo el cristal</string>
+    <string name="modx_liquid_bg_sum" translatable="false">Pinta el color de fondo bajo el cristal para que el tinte se adapte. Apágalo si ves un tono raro</string>
 </resources>

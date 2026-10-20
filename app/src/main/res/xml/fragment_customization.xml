@@ -152,6 +152,13 @@
             app:title="@string/modx_pill_round" />
 
         <rikka.material.preference.MaterialSwitchPreference
+            app:defaultValue="true"
+            app:dependency="modx_liquid"
+            app:key="modx_liquid_bg"
+            app:summary="@string/modx_liquid_bg_sum"
+            app:title="@string/modx_liquid_bg" />
+
+        <rikka.material.preference.MaterialSwitchPreference
             app:dependency="modx_liquid"
             app:key="modx_ios_tab"
             app:summary="@string/modx_ios_tab_sum"

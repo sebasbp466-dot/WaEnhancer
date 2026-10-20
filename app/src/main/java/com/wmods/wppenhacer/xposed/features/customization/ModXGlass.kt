@@ -38,7 +38,9 @@ uniform float lensAmt;
 uniform float disp;
 uniform float rimGain;
 uniform float sat;
-uniform float frost;
+uniform float tintAmt;
+uniform float toneLo;
+uniform float toneHi;
 uniform float2 light;
 
 float sdRound(float2 p, float2 b, float r) {
@@ -82,8 +84,8 @@ half4 main(float2 fc) {
     half l = dot(src, half3(0.2126, 0.7152, 0.0722));
     half3 col = half3(l) + (src - half3(l)) * half(sat);
     float lum = float(l) / max(float(a), 0.001);
-    float adapt = clamp((1.0 - lum) * frost, 0.0, 0.5);
-    col = mix(col, half3(0.82) * a, half(adapt));
+    float tone = mix(toneLo, toneHi, smoothstep(0.28, 0.72, lum));
+    col = mix(col, half3(half(tone)) * a, half(tintAmt));
 
     float2 L = normalize(light);
     float lit = clamp(dot(n, L), 0.0, 1.0);
@@ -125,7 +127,9 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val night: Boolean,
         private val lightDeg: Int,
         private val roundPct: Int,
-        private val marginDp: Int
+        private val marginDp: Int,
+        private val useCustom: Boolean,
+        private val fillBg: Boolean
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -138,6 +142,44 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private var shader: RuntimeShader? = null
         private var shaderFailed = false
         private var strokeKey = 0L
+
+        private val tintAmt: Float = if (useCustom) 0f else ((tint ushr 24) and 0xFF) / 255f
+        private var bgCache = 0
+        private var bgCached = false
+
+        private fun backdropColor(): Int {
+            if (bgCached) return bgCache
+            var c = 0
+            try {
+                var p = bar.parent as? View
+                while (p != null && c == 0) {
+                    val b = p.background
+                    if (b is android.graphics.drawable.ColorDrawable && ((b.color ushr 24) and 0xFF) == 255) {
+                        c = b.color
+                    }
+                    p = p.parent as? View
+                }
+                if (c == 0) {
+                    val ctx = bar.context
+                    val tv = android.util.TypedValue()
+                    if (ctx.theme.resolveAttribute(android.R.attr.windowBackground, tv, true)) {
+                        if (tv.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT &&
+                            tv.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT
+                        ) {
+                            c = tv.data or (0xFF shl 24)
+                        } else {
+                            val dr = ctx.getDrawable(tv.resourceId)
+                            if (dr is android.graphics.drawable.ColorDrawable) c = dr.color or (0xFF shl 24)
+                        }
+                    }
+                }
+            } catch (_: Throwable) {
+            }
+            if (c == 0) c = if (night) 0xFF0B0F14.toInt() else 0xFFFFFFFF.toInt()
+            bgCache = c
+            bgCached = true
+            return c
+        }
 
         private fun buildEffect(gw: Int, gh: Int, corner: Float): RenderEffect {
             val cm = ColorMatrix()
@@ -153,9 +195,11 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                 sh.setFloatUniform("lensW", gh * 0.28f)
                 sh.setFloatUniform("lensAmt", liquid / 100f * 0.40f * gh)
                 sh.setFloatUniform("disp", dispersion / 100f)
-                sh.setFloatUniform("rimGain", rimGain / 100f)
+                sh.setFloatUniform("rimGain", rimGain / 100f * (if (night) 0.45f else 1f))
                 sh.setFloatUniform("sat", 1.0f)
-                sh.setFloatUniform("frost", if (night) 0f else 0.10f)
+                sh.setFloatUniform("tintAmt", tintAmt)
+                sh.setFloatUniform("toneLo", if (night) 0.02f else 0.25f)
+                sh.setFloatUniform("toneHi", if (night) 0.55f else 0.98f)
                 sh.setFloatUniform("light", Math.cos(rad).toFloat(), Math.sin(rad).toFloat())
                 RenderEffect.createChainEffect(
                     RenderEffect.createRuntimeShaderEffect(sh, "contents"), blur
@@ -217,6 +261,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                     val rc = node.beginRecording(gw, gh)
                     try {
                         recording = true
+                        if (fillBg) rc.drawColor(backdropColor())
                         val gx = barLoc[0] + left
                         val gy = barLoc[1] + top
                         val now = SystemClock.uptimeMillis()
@@ -253,14 +298,17 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                     Log.w("ModX", "ModXGlass: fallo al dibujar el blur", t)
                 }
             }
-            canvas.drawPath(path, tintPaint)
+            if (!(liquid > 0 && !useCustom && shader != null && !shaderFailed)) {
+                canvas.drawPath(path, tintPaint)
+            }
             if (pill) {
                 val key = gw.toLong() * 100000L + gh
                 if (key != strokeKey) {
                     strokeKey = key
                     strokePaint.shader = LinearGradient(
                         left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(),
-                        intArrayOf(0x66FFFFFF, 0x0AFFFFFF, 0x40FFFFFF),
+                        if (night) intArrayOf(0x30FFFFFF, 0x04FFFFFF, 0x1CFFFFFF)
+                        else intArrayOf(0x66FFFFFF, 0x0AFFFFFF, 0x40FFFFFF),
                         floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP
                     )
                 }
@@ -389,6 +437,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     private fun styleTabs(bar: View) {
         val d = bar.resources.displayMetrics.density
         val g = bar as? ViewGroup ?: return
+        val dark = isDark(bar)
         val row = g.getChildAt(0) as? ViewGroup ?: return
         for (i in 0 until row.childCount) {
             val tab = row.getChildAt(i) as? ViewGroup ?: continue
@@ -397,11 +446,21 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (ind.javaClass.simpleName != "View") continue
             if (ind.tag == "modx_tab") continue
             val gd = android.graphics.drawable.GradientDrawable()
-            gd.setColor(xprefs.getInt("modx_tab_color", 0).let { if (it != 0) it else 0x38FFFFFF })
+            gd.setColor(xprefs.getInt("modx_tab_color", 0).let { if (it != 0) it else if (dark) 0x22FFFFFF else 0x38FFFFFF })
             gd.cornerRadius = 1000f
-            gd.setStroke(maxOf(1, (1 * d).toInt()), 0x59FFFFFF)
+            gd.setStroke(maxOf(1, (1 * d).toInt()), if (dark) 0x24FFFFFF else 0x59FFFFFF)
             ind.background = gd
             ind.tag = "modx_tab"
+        }
+    }
+
+    private fun isDark(bar: View): Boolean {
+        val night = (bar.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        return when (xprefs.getString("modx_glass_mode", "auto") ?: "auto") {
+            "dark" -> true
+            "light" -> false
+            else -> night
         }
     }
 
@@ -461,7 +520,9 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             dark,
             xprefs.getInt("modx_light_angle", 240),
             xprefs.getInt("modx_pill_round", 100),
-            xprefs.getInt("modx_pill_margin", 12)
+            xprefs.getInt("modx_pill_margin", 12),
+            custom != 0,
+            xprefs.getBoolean("modx_liquid_bg", true)
         )
         installed[bar] = true
         if (under) applyUnder(bar, fabIds)
