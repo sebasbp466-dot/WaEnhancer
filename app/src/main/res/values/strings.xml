@@ -646,4 +646,8 @@
     <string name="modx_row_radius" translatable="false">Redondeo de las filas (dp)</string>
     <string name="modx_row_fill" translatable="false">Relleno de las filas (%)</string>
     <string name="modx_row_border" translatable="false">Borde de las filas (%)</string>
+    <string name="modx_chat" translatable="false">Estilo dentro del chat</string>
+    <string name="modx_chat_sum" translatable="false">Fondo desenfocado y burbujas translúcidas al entrar a un chat o grupo</string>
+    <string name="modx_chat_wall_blur" translatable="false">Desenfoque del fondo del chat (dp)</string>
+    <string name="modx_chat_bubble_alpha" translatable="false">Opacidad de las burbujas (%)</string>
 </resources>

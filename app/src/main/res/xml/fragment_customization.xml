@@ -276,6 +276,30 @@
             app:min="0"
             app:showSeekBarValue="true"
             app:title="@string/modx_row_border" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_lg"
+            app:key="modx_chat"
+            app:summary="@string/modx_chat_sum"
+            app:title="@string/modx_chat" />
+
+        <SeekBarPreference
+            android:defaultValue="12"
+            android:max="40"
+            app:dependency="modx_chat"
+            app:key="modx_chat_wall_blur"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_chat_wall_blur" />
+
+        <SeekBarPreference
+            android:defaultValue="85"
+            android:max="100"
+            app:dependency="modx_chat"
+            app:key="modx_chat_bubble_alpha"
+            app:min="30"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_chat_bubble_alpha" />
     </PreferenceCategory>
 
     <PreferenceCategory
