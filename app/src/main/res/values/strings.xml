@@ -636,4 +636,14 @@
     <string name="modx_liquid_bg" translatable="false">Fondo opaco bajo el cristal</string>
     <string name="modx_liquid_bg_sum" translatable="false">Pinta el color de fondo bajo el cristal para que el tinte se adapte. Apágalo si ves un tono raro</string>
     <string name="modx_tab_dark" translatable="false">Visibilidad de la cápsula en oscuro (%)</string>
+    <string name="modx_rows" translatable="false">Estilo de chats</string>
+    <string name="modx_rows_sum" translatable="false">Textos translúcidos y filas de cristal en la lista de chats</string>
+    <string name="modx_row_a_name" translatable="false">Transparencia del nombre (%)</string>
+    <string name="modx_row_a_msg" translatable="false">Transparencia del mensaje (%)</string>
+    <string name="modx_row_a_date" translatable="false">Transparencia de la hora (%)</string>
+    <string name="modx_row_glass" translatable="false">Filas de cristal</string>
+    <string name="modx_row_glass_sum" translatable="false">Cada chat se ve como una tarjeta translúcida con borde suave</string>
+    <string name="modx_row_radius" translatable="false">Redondeo de las filas (dp)</string>
+    <string name="modx_row_fill" translatable="false">Relleno de las filas (%)</string>
+    <string name="modx_row_border" translatable="false">Borde de las filas (%)</string>
 </resources>

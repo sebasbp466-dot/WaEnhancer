@@ -210,6 +210,72 @@
             app:min="1"
             app:showSeekBarValue="true"
             app:title="@string/modx_scroll_blur_strength" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_lg"
+            app:key="modx_rows"
+            app:summary="@string/modx_rows_sum"
+            app:title="@string/modx_rows" />
+
+        <SeekBarPreference
+            android:defaultValue="90"
+            android:max="100"
+            app:dependency="modx_rows"
+            app:key="modx_row_a_name"
+            app:min="20"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_a_name" />
+
+        <SeekBarPreference
+            android:defaultValue="65"
+            android:max="100"
+            app:dependency="modx_rows"
+            app:key="modx_row_a_msg"
+            app:min="20"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_a_msg" />
+
+        <SeekBarPreference
+            android:defaultValue="75"
+            android:max="100"
+            app:dependency="modx_rows"
+            app:key="modx_row_a_date"
+            app:min="20"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_a_date" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_rows"
+            app:key="modx_row_glass"
+            app:summary="@string/modx_row_glass_sum"
+            app:title="@string/modx_row_glass" />
+
+        <SeekBarPreference
+            android:defaultValue="20"
+            android:max="40"
+            app:dependency="modx_row_glass"
+            app:key="modx_row_radius"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_radius" />
+
+        <SeekBarPreference
+            android:defaultValue="6"
+            android:max="40"
+            app:dependency="modx_row_glass"
+            app:key="modx_row_fill"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_fill" />
+
+        <SeekBarPreference
+            android:defaultValue="8"
+            android:max="40"
+            app:dependency="modx_row_glass"
+            app:key="modx_row_border"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_row_border" />
     </PreferenceCategory>
 
     <PreferenceCategory

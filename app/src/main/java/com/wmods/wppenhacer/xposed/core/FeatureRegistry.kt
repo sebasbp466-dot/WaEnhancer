@@ -4,6 +4,7 @@ import com.wmods.wppenhacer.xposed.features.customization.BubbleColors
 import com.wmods.wppenhacer.xposed.features.customization.ContactVerify
 import com.wmods.wppenhacer.xposed.features.customization.CustomThemeV2
 import com.wmods.wppenhacer.xposed.features.customization.CustomTime
+import com.wmods.wppenhacer.xposed.features.customization.ModXRows
 import com.wmods.wppenhacer.xposed.features.customization.ModXProbe
 import com.wmods.wppenhacer.xposed.features.customization.ModXFab
 import com.wmods.wppenhacer.xposed.features.customization.ModXBlur
@@ -108,6 +109,7 @@ internal object FeatureRegistry {
         Others::class.java,
         PinnedLimit::class.java,
         CustomTime::class.java,
+        ModXRows::class.java,
         ModXProbe::class.java,
         ModXFab::class.java,
         ModXBlur::class.java,
