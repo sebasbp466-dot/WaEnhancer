@@ -35,19 +35,7 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
                     val r = wall * v.resources.displayMetrics.density
                     v.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
                 } else if (mainId > 0 && v.id == mainId) {
-                    v.background?.mutate()?.alpha = a255
-                }
-            }
-        }
-
-        if (mainId > 0) {
-            View::class.java.resolve().firstMethod {
-                name = "setBackgroundDrawable"
-                superclass()
-            }.hook {
-                after {
-                    val v = instance as? View ?: return@after
-                    if (v.id == mainId) v.background?.mutate()?.alpha = a255
+                    v.alpha = a255 / 255f
                 }
             }
         }
