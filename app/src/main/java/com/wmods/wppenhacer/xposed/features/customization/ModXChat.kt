@@ -13,6 +13,8 @@ import com.wmods.wppenhacer.xposed.utils.Utils
 class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
+    private var logged = false
+
     @Throws(Exception::class)
     override fun doHook() {
         val on = xprefs.getBoolean("modx_lg", false) && xprefs.getBoolean("modx_chat", false)
@@ -35,7 +37,24 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
                     val r = wall * v.resources.displayMetrics.density
                     v.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
                 } else if (mainId > 0 && v.id == mainId) {
-                    v.alpha = a255 / 255f
+                    val b = v.background
+                    if (!logged) {
+                        logged = true
+                        Log.i("ModX", "ModXChat burbuja fondo=${b?.javaClass?.name} alfa=${b?.alpha}")
+                    }
+                    b?.mutate()?.alpha = a255
+                }
+            }
+        }
+
+        if (mainId > 0) {
+            View::class.java.resolve().firstMethod {
+                name = "setBackgroundDrawable"
+                superclass()
+            }.hook {
+                after {
+                    val v = instance as? View ?: return@after
+                    if (v.id == mainId) v.background?.mutate()?.alpha = a255
                 }
             }
         }
