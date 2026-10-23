@@ -8,59 +8,98 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.wmods.wppenhacer.xposed.core.Feature
 import com.wmods.wppenhacer.xposed.utils.Utils
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.util.ArrayDeque
 
 class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
-    private val hooked = HashSet<Class<*>>()
+    private val probed = HashSet<Class<*>>()
     private val stackTL = ThreadLocal<ArrayDeque<Int>>()
-    private var mainId = 0
-    private var a255 = 217
+    private var a255 = 77
 
-    private fun findDraw(cls: Class<*>): Method? {
-        var k: Class<*>? = cls
-        while (k != null && k != Drawable::class.java && k != Any::class.java) {
-            try {
-                return k.getDeclaredMethod("draw", Canvas::class.java)
-            } catch (_: NoSuchMethodException) {
-            }
-            k = k.superclass
+    private fun idName(v: View): String {
+        if (v.id <= 0) return "-"
+        return try {
+            v.resources.getResourceEntryName(v.id)
+        } catch (_: Throwable) {
+            v.id.toString()
         }
-        return null
     }
 
-    private fun hookBubble(v: View) {
-        if (v.id != mainId) return
-        val d = v.background ?: return
-        val cls = d.javaClass
-        if (!hooked.add(cls)) return
-        val parentBg = (v.parent as? View)?.background?.javaClass?.name
-        Log.i("ModX", "ModXChat burbuja clase=${cls.name} padre=$parentBg")
-        val m = findDraw(cls)
-        if (m == null) {
-            Log.w("ModX", "ModXChat: la clase no declara draw")
+    private fun probe(main: View) {
+        val row = main.parent as? ViewGroup ?: return
+        val cls = row.javaClass
+        if (!probed.add(cls)) return
+        Log.i(
+            "ModX",
+            "ModXChat probe main=${main.javaClass.name} ${main.width}x${main.height} bg=${main.background?.javaClass?.name} fg=${main.foreground?.javaClass?.name}"
+        )
+        Log.i(
+            "ModX",
+            "ModXChat probe fila=${cls.name} id=${idName(row)} bg=${row.background?.javaClass?.name} willNotDraw=${row.willNotDraw()}"
+        )
+        val mg = main as? ViewGroup
+        if (mg != null) {
+            for (i in 0 until mg.childCount) {
+                val c = mg.getChildAt(i)
+                Log.i("ModX", "ModXChat probe hijo $i ${c.javaClass.name} id=${idName(c)} bg=${c.background?.javaClass?.name}")
+            }
+        }
+        var k: Class<*>? = cls
+        var n = 0
+        while (k != null && k != ViewGroup::class.java && k != View::class.java && n < 8) {
+            for (m in k.declaredMethods) {
+                if (m.parameterTypes.any { it == Canvas::class.java }) {
+                    Log.i("ModX", "ModXChat probe metodo ${k.name}.${m.name}")
+                }
+            }
+            for (f in k.declaredFields) {
+                if (Modifier.isStatic(f.modifiers)) continue
+                if (Drawable::class.java.isAssignableFrom(f.type)) {
+                    var d: Drawable? = null
+                    try {
+                        f.isAccessible = true
+                        d = f.get(row) as? Drawable
+                    } catch (_: Throwable) {
+                    }
+                    Log.i(
+                        "ModX",
+                        "ModXChat probe campo ${k.simpleName}.${f.name} ${f.type.simpleName} valor=${d?.javaClass?.simpleName} ${d?.bounds?.width()}x${d?.bounds?.height()}"
+                    )
+                }
+            }
+            k = k.superclass
+            n++
+        }
+
+        var kk: Class<*>? = cls
+        var target: Method? = null
+        while (kk != null && kk != ViewGroup::class.java && kk != View::class.java && target == null) {
+            try {
+                target = kk.getDeclaredMethod("onDraw", Canvas::class.java)
+            } catch (_: NoSuchMethodException) {
+            }
+            kk = kk.superclass
+        }
+        if (target == null) {
+            Log.i("ModX", "ModXChat probe: la fila no declara onDraw")
             return
         }
+        Log.i("ModX", "ModXChat probe onDraw en ${target.declaringClass.name}")
         try {
-            m.hook {
+            target.hook {
                 before {
                     val st = stackTL.get() ?: ArrayDeque<Int>().also { stackTL.set(it) }
-                    val dr = instance as? Drawable
+                    val v = instance as? View
                     val c = args[0] as? Canvas
-                    val owner = dr?.callback as? View
-                    if (dr != null && c != null && owner != null && owner.id == mainId) {
-                        val r = dr.bounds
-                        val pad = 24 * owner.resources.displayMetrics.density
-                        st.push(
-                            c.saveLayerAlpha(
-                                r.left - pad, r.top - pad, r.right + pad, r.bottom + pad, a255
-                            )
-                        )
+                    if (v != null && c != null) {
+                        st.push(c.saveLayerAlpha(0f, 0f, v.width.toFloat(), v.height.toFloat(), a255))
                     } else {
                         st.push(-1)
                     }
@@ -68,13 +107,13 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
                 after {
                     val st = stackTL.get() ?: return@after
                     if (st.isEmpty()) return@after
-                    val n = st.pop()
+                    val saved = st.pop()
                     val c = args[0] as? Canvas ?: return@after
-                    if (n >= 0) c.restoreToCount(n)
+                    if (saved >= 0) c.restoreToCount(saved)
                 }
             }
         } catch (t: Throwable) {
-            Log.w("ModX", "ModXChat: no se pudo enganchar draw", t)
+            Log.w("ModX", "ModXChat: no se pudo enganchar onDraw", t)
         }
     }
 
@@ -85,8 +124,8 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
         val bubble = xprefs.getInt("modx_chat_bubble_alpha", 85)
         Log.i("ModX", "ModXChat on=$on wall=$wall bubble=$bubble")
         if (!on) return
-        mainId = Utils.getID("main_layout", "id")
         a255 = bubble.coerceIn(20, 100) * 255 / 100
+        val mainId = Utils.getID("main_layout", "id")
         val wallId = Utils.getID("conversation_background", "id")
 
         View::class.java.resolve().firstMethod {
@@ -100,19 +139,13 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
                     val r = wall * v.resources.displayMetrics.density
                     v.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
                 } else if (mainId > 0 && v.id == mainId) {
-                    hookBubble(v)
-                }
-            }
-        }
-
-        if (mainId > 0) {
-            View::class.java.resolve().firstMethod {
-                name = "setBackgroundDrawable"
-                superclass()
-            }.hook {
-                after {
-                    val v = instance as? View ?: return@after
-                    if (v.id == mainId) hookBubble(v)
+                    v.post {
+                        try {
+                            probe(v)
+                        } catch (t: Throwable) {
+                            Log.w("ModX", "ModXChat probe falló", t)
+                        }
+                    }
                 }
             }
         }
