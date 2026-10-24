@@ -20,6 +20,7 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
     private val probed = HashSet<Class<*>>()
+    private val hookedMethods = HashSet<Method>()
     private val stackTL = ThreadLocal<ArrayDeque<Int>>()
     private var a255 = 77
 
@@ -91,6 +92,7 @@ class ModXChat(loader: ClassLoader, preferences: SharedPreferences) :
             Log.i("ModX", "ModXChat probe: la fila no declara onDraw")
             return
         }
+        if (!hookedMethods.add(target)) return
         Log.i("ModX", "ModXChat probe onDraw en ${target.declaringClass.name}")
         try {
             target.hook {
