@@ -129,7 +129,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val roundPct: Int,
         private val marginDp: Int,
         private val useCustom: Boolean,
-        private val fillBg: Boolean
+        private val fillBg: Boolean,
+        private val vInsetDp: Int = 6
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -148,6 +149,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private var bgCached = false
 
         private fun backdropColor(): Int {
+            if (ModXState.baseBg != 0) return ModXState.baseBg
             if (bgCached) return bgCache
             var c = 0
             try {
@@ -227,8 +229,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
             if (pill) {
                 left = (marginDp * d).toInt()
                 right = w - left
-                top = (6 * d).toInt()
-                bottom = barH - (6 * d).toInt()
+                top = (vInsetDp * d).toInt()
+                bottom = barH - (vInsetDp * d).toInt()
                 corner = (bottom - top) / 2f * (roundPct.coerceIn(0, 100) / 100f)
             } else {
                 var extra = 0
@@ -261,7 +263,21 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                     val rc = node.beginRecording(gw, gh)
                     try {
                         recording = true
-                        if (fillBg) rc.drawColor(backdropColor())
+                        if (fillBg) {
+                            val bgd = ModXState.bgDrawable
+                            val bgv = ModXState.bgView
+                            if (bgd != null && bgv != null && !mirror && bgv.isAttachedToWindow && bgv.rootView === bar.rootView) {
+                                val loc = IntArray(2)
+                                bgv.getLocationInWindow(loc)
+                                val s0 = rc.save()
+                                rc.translate((loc[0] - (barLoc[0] + left)).toFloat(), (loc[1] - (barLoc[1] + top)).toFloat())
+                                bgd.setBounds(0, 0, bgv.width, bgv.height)
+                                bgd.draw(rc)
+                                rc.restoreToCount(s0)
+                            } else {
+                                rc.drawColor(backdropColor())
+                            }
+                        }
                         val gx = barLoc[0] + left
                         val gy = barLoc[1] + top
                         val now = SystemClock.uptimeMillis()
@@ -326,6 +342,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
 
     @Throws(Exception::class)
     override fun doHook() {
+        instance = this
         val enabled = xprefs.getBoolean("modx_lg", false) &&
             xprefs.getBoolean("modx_glass_bar", false)
         val under = xprefs.getBoolean("modx_glass_under", false) &&
@@ -354,6 +371,48 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                 if (view.id != barId) return@after
                 view.post { install(view, drawChild, blurDp, tintPct, under, fabIds) }
             }
+        }
+    }
+
+    companion object {
+        @Volatile
+        var instance: ModXGlass? = null
+    }
+
+    fun makeGlass(v: View, vInsetDp: Int, marginDp: Int, roundPct: Int, shader: Boolean): Drawable? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+        return try {
+            val dm = ViewGroup::class.java.getDeclaredMethod(
+                "drawChild", Canvas::class.java, View::class.java, Long::class.java
+            )
+            dm.isAccessible = true
+            val d = v.resources.displayMetrics.density
+            val night = (v.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+            val dark = when (xprefs.getString("modx_glass_mode", "auto") ?: "auto") {
+                "dark" -> true
+                "light" -> false
+                else -> night
+            }
+            val liquid = if (shader && xprefs.getBoolean("modx_liquid", false) && Build.VERSION.SDK_INT >= 33)
+                xprefs.getInt("modx_liquid_strength", 60) else 0
+            val blur = (if (liquid > 0) xprefs.getInt("modx_liquid_blur", 4) else 14) * d
+            val pct = if (liquid > 0) xprefs.getInt("modx_liquid_tint", 8) * (if (dark) 3 else 1) else 30
+            val base = when {
+                liquid > 0 -> if (dark) 0x0A0C10 else 0xFFFFFF
+                dark -> 0x1D1B20
+                else -> 0xFEF7FF
+            }
+            val tint = ((pct.coerceIn(0, 100) * 255 / 100) shl 24) or base
+            GlassDrawable(
+                v, dm, blur, tint, if (roundPct > 0) 300f * d else 0f, false, false, liquid,
+                xprefs.getInt("modx_liquid_disp", 25), xprefs.getInt("modx_liquid_rim", 70),
+                xprefs.getInt("modx_liquid_sat", 140), dark, xprefs.getInt("modx_light_angle", 240),
+                roundPct, marginDp, false, xprefs.getBoolean("modx_liquid_bg", true), vInsetDp
+            )
+        } catch (t: Throwable) {
+            Log.w("ModX", "ModXGlass.makeGlass falló", t)
+            null
         }
     }
 

@@ -300,6 +300,58 @@
             app:min="30"
             app:showSeekBarValue="true"
             app:title="@string/modx_chat_bubble_alpha" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_chat"
+            app:key="modx_chat_header"
+            app:summary="@string/modx_chat_header_sum"
+            app:title="@string/modx_chat_header" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_chat"
+            app:key="modx_chat_input"
+            app:summary="@string/modx_chat_input_sum"
+            app:title="@string/modx_chat_input" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            app:dependency="modx_lg"
+            app:key="modx_bg_anim"
+            app:summary="@string/modx_bg_anim_sum"
+            app:title="@string/modx_bg_anim" />
+
+        <com.wmods.wppenhacer.preference.FeatureColorPreferenceCompat
+            app:cpv_showAlphaSlider="false"
+            app:dependency="modx_bg_anim"
+            app:icon="@drawable/ic_customization_palette_24"
+            app:key="modx_bg_color1"
+            app:summary="@string/default_color"
+            app:title="@string/modx_bg_color1" />
+
+        <com.wmods.wppenhacer.preference.FeatureColorPreferenceCompat
+            app:cpv_showAlphaSlider="false"
+            app:dependency="modx_bg_anim"
+            app:icon="@drawable/ic_customization_palette_24"
+            app:key="modx_bg_color2"
+            app:summary="@string/default_color"
+            app:title="@string/modx_bg_color2" />
+
+        <SeekBarPreference
+            android:defaultValue="30"
+            android:max="60"
+            app:dependency="modx_bg_anim"
+            app:key="modx_bg_intensity"
+            app:min="5"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_bg_intensity" />
+
+        <SeekBarPreference
+            android:defaultValue="40"
+            android:max="100"
+            app:dependency="modx_bg_anim"
+            app:key="modx_bg_speed"
+            app:min="0"
+            app:showSeekBarValue="true"
+            app:title="@string/modx_bg_speed" />
     </PreferenceCategory>
 
     <PreferenceCategory

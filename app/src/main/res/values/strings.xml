@@ -650,4 +650,14 @@
     <string name="modx_chat_sum" translatable="false">Fondo desenfocado y burbujas translúcidas al entrar a un chat o grupo</string>
     <string name="modx_chat_wall_blur" translatable="false">Desenfoque del fondo del chat (dp)</string>
     <string name="modx_chat_bubble_alpha" translatable="false">Opacidad de las burbujas (%)</string>
+    <string name="modx_chat_header" translatable="false">Encabezado de cristal</string>
+    <string name="modx_chat_header_sum" translatable="false">El encabezado del chat desenfoca los mensajes que pasan por debajo</string>
+    <string name="modx_chat_input" translatable="false">Barra de escribir de cristal</string>
+    <string name="modx_chat_input_sum" translatable="false">La barra de escribir es una píldora de cristal sobre los mensajes</string>
+    <string name="modx_bg_anim" translatable="false">Fondo animado</string>
+    <string name="modx_bg_anim_sum" translatable="false">Manchas de color en movimiento detrás de la lista de chats (consume batería)</string>
+    <string name="modx_bg_color1" translatable="false">Color del fondo animado 1</string>
+    <string name="modx_bg_color2" translatable="false">Color del fondo animado 2</string>
+    <string name="modx_bg_intensity" translatable="false">Intensidad del fondo animado (%)</string>
+    <string name="modx_bg_speed" translatable="false">Velocidad del fondo animado</string>
 </resources>
