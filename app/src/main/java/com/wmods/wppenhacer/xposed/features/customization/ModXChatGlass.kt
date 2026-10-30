@@ -24,6 +24,17 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
     }
 
+    private fun sourcesOf(root: View, wallId: Int): (() -> List<View>)? {
+        val wall = if (wallId > 0) root.findViewById<View>(wallId) else null
+        val list = root.findViewById<View>(android.R.id.list)
+        val box = list?.parent as? View
+        val out = ArrayList<View>()
+        if (wall != null) out.add(wall)
+        if (box != null) out.add(box)
+        if (out.isEmpty()) return null
+        return { out }
+    }
+
     private fun refresh(v: View) {
         val vto = v.viewTreeObserver
         val l1 = ViewTreeObserver.OnScrollChangedListener { v.invalidate() }
@@ -42,18 +53,19 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
         })
     }
 
-    private fun setupHeader(holder: View, coordId: Int, toolbarId: Int, tries: Int) {
+    private fun setupHeader(holder: View, coordId: Int, toolbarId: Int, wallId: Int, tries: Int) {
         if (done.containsKey(holder)) return
         val h = holder.height
         val root = holder.parent as? ViewGroup
         if (h <= 0 || root == null) {
             if (tries < 10) {
-                holder.postDelayed({ guard { setupHeader(holder, coordId, toolbarId, tries + 1) } }, 250)
+                holder.postDelayed({ guard { setupHeader(holder, coordId, toolbarId, wallId, tries + 1) } }, 250)
             }
             return
         }
         val coordinator = root.findViewById<View>(coordId) ?: return
-        val glass = ModXGlass.instance?.makeGlass(holder, 0, 0, 0, false) ?: return
+        val src = sourcesOf(holder.rootView, wallId)
+        val glass = ModXGlass.instance?.makeGlass(holder, 0, 0, 0, false, src, false) ?: return
         holder.findViewById<View>(toolbarId)?.background = null
         holder.background = glass
         holder.elevation = 24f
@@ -69,21 +81,22 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
         done[holder] = true
         refresh(holder)
-        Log.i("ModX", "ModXChatGlass encabezado listo h=$h")
+        Log.i("ModX", "ModXChatGlass encabezado listo h=$h fuentes=${src?.invoke()?.size}")
     }
 
-    private fun setupInput(input: View, footerId: Int, tries: Int) {
+    private fun setupInput(input: View, footerId: Int, wallId: Int, tries: Int) {
         if (done.containsKey(input)) return
         val root = input.rootView
         val footer = root.findViewById<View>(footerId)
         val list = root.findViewById<View>(android.R.id.list)
         if (footer == null || list == null || footer.height <= 0) {
             if (tries < 10) {
-                input.postDelayed({ guard { setupInput(input, footerId, tries + 1) } }, 250)
+                input.postDelayed({ guard { setupInput(input, footerId, wallId, tries + 1) } }, 250)
             }
             return
         }
-        val glass = ModXGlass.instance?.makeGlass(input, 0, 0, 100, true) ?: return
+        val src = sourcesOf(root, wallId)
+        val glass = ModXGlass.instance?.makeGlass(input, 0, 0, 100, true, src, false) ?: return
         input.background = glass
         val box = list.parent as? View
         val lp = box?.layoutParams as? RelativeLayout.LayoutParams
@@ -99,7 +112,7 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
         }
         done[input] = true
         refresh(input)
-        Log.i("ModX", "ModXChatGlass barra de escribir lista")
+        Log.i("ModX", "ModXChatGlass barra de escribir lista fuentes=${src?.invoke()?.size}")
     }
 
     @Throws(Exception::class)
@@ -114,6 +127,7 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
         val inputId = Utils.getID("input_layout", "id")
         val toolbarId = Utils.getID("toolbar", "id")
         val footerId = Utils.getID("footer", "id")
+        val wallId = Utils.getID("conversation_background", "id")
 
         View::class.java.resolve().firstMethod {
             name = "onAttachedToWindow"
@@ -123,9 +137,9 @@ class ModXChatGlass(loader: ClassLoader, preferences: SharedPreferences) :
             after {
                 val v = instance as? View ?: return@after
                 if (header && holderId > 0 && v.id == holderId) {
-                    v.postDelayed({ guard { setupHeader(v, coordId, toolbarId, 0) } }, 300)
+                    v.postDelayed({ guard { setupHeader(v, coordId, toolbarId, wallId, 0) } }, 300)
                 } else if (input && inputId > 0 && v.id == inputId) {
-                    v.postDelayed({ guard { setupInput(v, footerId, 0) } }, 300)
+                    v.postDelayed({ guard { setupInput(v, footerId, wallId, 0) } }, 300)
                 }
             }
         }

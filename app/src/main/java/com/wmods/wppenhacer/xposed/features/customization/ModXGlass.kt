@@ -104,6 +104,8 @@ half4 main(float2 fc) {
 }
 """
 
+private val srcLogged = java.util.WeakHashMap<Any, Boolean>()
+
 class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
     Feature(loader, preferences) {
 
@@ -130,7 +132,8 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         private val marginDp: Int,
         private val useCustom: Boolean,
         private val fillBg: Boolean,
-        private val vInsetDp: Int = 6
+        private val vInsetDp: Int = 6,
+        private val sources: (() -> List<View>)? = null
     ) : Drawable() {
         private val node = RenderNode("modx_glass")
         private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tint }
@@ -281,8 +284,23 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                         val gx = barLoc[0] + left
                         val gy = barLoc[1] + top
                         val now = SystemClock.uptimeMillis()
+                        val src = sources?.invoke()
+                        if (src != null) {
+                            if (srcLogged.put(this, true) == null) {
+                                Log.i("ModX", "ModXGlass fuentes=${src.size} ${gw}x${gh}")
+                            }
+                            for (s0 in src) {
+                                val par = s0.parent as? ViewGroup ?: continue
+                                if (s0.visibility != View.VISIBLE) continue
+                                par.getLocationInWindow(pLoc)
+                                val save0 = rc.save()
+                                rc.translate((pLoc[0] - gx).toFloat(), (pLoc[1] - gy).toFloat())
+                                drawChild.invoke(par, rc, s0, now)
+                                rc.restoreToCount(save0)
+                            }
+                        }
                         var child: View = bar
-                        var p = bar.parent as? ViewGroup
+                        var p = if (src != null) null else bar.parent as? ViewGroup
                         while (p != null) {
                             p.getLocationInWindow(pLoc)
                             val save = rc.save()
@@ -379,7 +397,10 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
         var instance: ModXGlass? = null
     }
 
-    fun makeGlass(v: View, vInsetDp: Int, marginDp: Int, roundPct: Int, shader: Boolean): Drawable? {
+    fun makeGlass(
+        v: View, vInsetDp: Int, marginDp: Int, roundPct: Int, shader: Boolean,
+        sources: (() -> List<View>)? = null, fill: Boolean = true
+    ): Drawable? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
         return try {
             val dm = ViewGroup::class.java.getDeclaredMethod(
@@ -408,7 +429,7 @@ class ModXGlass(loader: ClassLoader, preferences: SharedPreferences) :
                 v, dm, blur, tint, if (roundPct > 0) 300f * d else 0f, false, false, liquid,
                 xprefs.getInt("modx_liquid_disp", 25), xprefs.getInt("modx_liquid_rim", 70),
                 xprefs.getInt("modx_liquid_sat", 140), dark, xprefs.getInt("modx_light_angle", 240),
-                roundPct, marginDp, false, xprefs.getBoolean("modx_liquid_bg", true), vInsetDp
+                roundPct, marginDp, false, fill && xprefs.getBoolean("modx_liquid_bg", true), vInsetDp, sources
             )
         } catch (t: Throwable) {
             Log.w("ModX", "ModXGlass.makeGlass falló", t)
